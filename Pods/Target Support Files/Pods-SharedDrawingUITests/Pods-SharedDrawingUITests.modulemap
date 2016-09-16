@@ -1,0 +1,6 @@
+framework module Pods_SharedDrawingUITests {
+  umbrella header "Pods-SharedDrawingUITests-umbrella.h"
+
+  export *
+  module * { export * }
+}

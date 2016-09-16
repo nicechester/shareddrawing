@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AD_UNIT_ID_FOR_BANNER_TEST</key>
+	<string>ca-app-pub-3940256099942544/2934735716</string>
+	<key>AD_UNIT_ID_FOR_INTERSTITIAL_TEST</key>
+	<string>ca-app-pub-3940256099942544/4411468910</string>
+	<key>CLIENT_ID</key>
+	<string>539617300594-ie8kuhvnhqrbp81je7m0c91nqn93pfif.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.539617300594-ie8kuhvnhqrbp81je7m0c91nqn93pfif</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDdqzg0N9qw3YVaJMj_hhL9YxixEoC0A8c</string>
+	<key>GCM_SENDER_ID</key>
+	<string>539617300594</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.violkim.test.SharedDrawing</string>
+	<key>PROJECT_ID</key>
+	<string>first-project-with-fireb-91821</string>
+	<key>STORAGE_BUCKET</key>
+	<string>first-project-with-fireb-91821.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<true/>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false/>
+	<key>IS_APPINVITE_ENABLED</key>
+	<false/>
+	<key>IS_GCM_ENABLED</key>
+	<true/>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true/>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:539617300594:ios:3775d8b41c7845ec</string>
+	<key>DATABASE_URL</key>
+	<string>https://first-project-with-fireb-91821.firebaseio.com</string>
+</dict>
+</plist>

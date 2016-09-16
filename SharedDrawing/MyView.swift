@@ -12,19 +12,37 @@ import Firebase
 class MyView: UIView {
     var currentColor = "Blue"
     var currentPath: [CGPoint]?
+    var pointIndex = 0
     var paths = [(points: [CGPoint], color: String)]()
     var ref: FIRDatabaseReference!
-//        {
-//        didSet {
-//            ref.observe(.childAdded, with: { snapshot in
-//                if let paths = snapshot.value(forKey: "paths") as? [Any] {
-//                    paths.forEach { path in
-//                        if let points = path
-//                    }
-//                }
-//            })
-//        }
-//    }
+        {
+        didSet {
+            ref.observe(.childChanged, with: { snapshot in
+                self.paths = [(points: [CGPoint], color: String)]()
+                for eachPath in snapshot.children.allObjects as! [FIRDataSnapshot] {
+                    if let pathInfo = eachPath.value as? [String:Any] {
+                        if let color = pathInfo["color"] as? String, let points = pathInfo["points"] as? [String:Any] {
+                            var cgPoints = [CGPoint]()
+                            let keys = Array(points.keys).sorted(by: <)
+                            for key in keys {
+                                if let pointDic = points[key] as? [String:Float] {
+                                    let x=pointDic["x"]!
+                                    let y=pointDic["y"]!
+                                    cgPoints.append((CGPoint(x: CGFloat(x), y: CGFloat(y))))
+                                }
+                            }
+                            self.paths.append((points: cgPoints, color: color))
+                        }
+                    }
+                }
+                self.setNeedsDisplay()
+            })
+            ref.observe(.childRemoved, with: {_ in 
+                self.paths.removeAll()
+                self.setNeedsDisplay()
+            })
+        }
+    }
     var key = "-1"
 
     func set(color colorString: String) {
@@ -46,27 +64,28 @@ class MyView: UIView {
         key = "path-\(ref.child("path").childByAutoId().key)"
         ref.child("paths").child(key).child("color").setValue(currentColor)
         currentPath = [getPoint(touches)]
-        setNeedsDisplay()
+//        setNeedsDisplay()
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         currentPath?.append(getPoint(touches))
-        setNeedsDisplay()
+//        setNeedsDisplay()
     }
     
     private func getPoint(_ touches: Set<UITouch>) -> CGPoint {
         let point = touches.first?.location(in: self)
         if let rp = point {
             let coord = ["x":rp.x, "y":rp.y]
-            ref.child("paths").child(key).child("points").childByAutoId().setValue(coord)
+            ref.child("paths").child(key).child("points").child("\(pointIndex)").setValue(coord)
+            pointIndex += 1
         }
         return point!
     }
  
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if let workingPath=currentPath {
-            paths.append((workingPath, currentColor))
-        }
+//        if let workingPath=currentPath {
+//            paths.append((workingPath, currentColor))
+//        }
     }
     
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -94,9 +113,11 @@ class MyView: UIView {
     }
     
     func clear() {
-        paths.removeAll()
+//        paths.removeAll()
         currentPath = nil
         ref.child("paths").removeValue()
-        setNeedsDisplay()
+        pointIndex = 0
+
+//        setNeedsDisplay()
     }
 }

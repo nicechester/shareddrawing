@@ -18,6 +18,7 @@ class MyView: UIView {
     var paths = [(points: [CGPoint], color: String)]()
     var ref: FIRDatabaseReference! {
         didSet {
+            ref.child("paths").observeSingleEvent(of: .value, with: initPaths)
             ref.child("paths").observe(.childAdded, with: changePaths)
             ref.child("paths").observe(.childChanged, with: changePaths)
             ref.child("paths").observe(.childRemoved, with: {_ in
@@ -37,21 +38,31 @@ class MyView: UIView {
         return true
     }
     
+    func initPaths(snapshot: FIRDataSnapshot) {
+        if let pathInfo = snapshot.value as? [String:Any] {
+            update(with: pathInfo)
+        }
+    }
+
     func changePaths(snapshot: FIRDataSnapshot) {
         if let pathInfo = snapshot.value as? [String:Any], self.isNotCurrentUser(snapshot) {
-            if let color = pathInfo["color"] as? String {
-                var cgPoints: [CGPoint]?
-                if let mapPoints = pathInfo["points"] as? [String: [String: CGFloat]] {
-                    cgPoints = makeCGPoints(with: mapPoints)
-                } else if let points = pathInfo["points"] as? [[String: CGFloat]] {
-                    cgPoints = makeCGPoints(with: points)
-                }
-                if let realCGPoints = cgPoints {
-                    self.paths.append((points: realCGPoints, color: color))
-                }
-            }
-            self.setNeedsDisplay()
+            update(with: pathInfo)
         }
+    }
+    
+    func update(with pathInfo: [String:Any]) {
+        if let color = pathInfo["color"] as? String {
+            var cgPoints: [CGPoint]?
+            if let mapPoints = pathInfo["points"] as? [String: [String: CGFloat]] {
+                cgPoints = makeCGPoints(with: mapPoints)
+            } else if let points = pathInfo["points"] as? [[String: CGFloat]] {
+                cgPoints = makeCGPoints(with: points)
+            }
+            if let realCGPoints = cgPoints {
+                self.paths.append((points: realCGPoints, color: color))
+            }
+        }
+        self.setNeedsDisplay()
     }
     
     func makeCGPoints(with points: [String: [String: CGFloat]]) -> [CGPoint] {

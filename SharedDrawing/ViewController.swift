@@ -15,6 +15,7 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         myView.ref = FIRDatabase.database().reference()
+        myView.myID = UIDevice.current.identifierForVendor?.uuidString ?? "iPAD"
     }
 
     override func didReceiveMemoryWarning() {

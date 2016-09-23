@@ -13,7 +13,9 @@ class MyView: UIView {
     var myID = "Chester's iPAD"
     var pathID = "-1"
     var currentColor = "Blue"
-    var currentPath: [CGPoint]?
+    var currentLines: [CGPoint]?
+    var currentPath = UIBezierPath()
+    var allPaths: [String:UIBezierPath] = [:]
     var pointIndex = 0
     var paths = [(points: [CGPoint], color: String)]()
     var ref: FIRDatabaseReference! {
@@ -23,7 +25,7 @@ class MyView: UIView {
             ref.child("paths").observe(.childChanged, with: changePaths)
             ref.child("paths").observe(.childRemoved, with: {_ in
                 self.paths = []
-                self.currentPath = nil
+                self.currentLines = nil
                 self.setNeedsDisplay()
             })
         }
@@ -50,6 +52,17 @@ class MyView: UIView {
         }
     }
     
+    func initAllPaths() {
+        let colors = ["Red", "Blue", "Orange", "Yellow"]
+        colors.forEach {
+            let path = UIBezierPath()
+            path.lineWidth = 3.0
+            allPaths[$0] = path
+        }
+        currentPath = UIBezierPath()
+        currentPath.lineWidth = 3.0
+    }
+
     func update(with pathInfo: [String:Any]) {
         if let color = pathInfo["color"] as? String {
             var cgPoints: [CGPoint]?
@@ -101,29 +114,45 @@ class MyView: UIView {
         self.pathID = ref.child("path").childByAutoId().key
         self.ref.child("paths").child(pathID).child("color").setValue(currentColor)
         self.ref.child("paths").child(pathID).child("user").setValue(myID)
-        self.currentPath = []
-        self.currentPath?.append(getPoint(touches))
+        self.currentLines = []
+        let cursor = getPoint(touches)
+        self.currentLines?.append(cursor)
+        self.currentPath.move(to: cursor)
         setNeedsDisplay()
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        currentPath?.append(getPoint(touches))
         setNeedsDisplay()
+        addLine(touches)
     }
     
     private func getPoint(_ touches: Set<UITouch>) -> CGPoint {
         let point = touches.first?.location(in: self)
         if let rp = point {
-            let coord = ["x":rp.x, "y":rp.y]
-            ref.child("paths").child(pathID).child("points").child("\(pointIndex)").setValue(coord)
-            pointIndex += 1
+            DispatchQueue.global(qos: .userInitiated).async {
+                let coord = ["x":rp.x, "y":rp.y]
+                self.ref.child("paths").child(self.pathID).child("points").child("\(self.pointIndex)").setValue(coord)
+                DispatchQueue.main.async {
+                    self.pointIndex += 1
+                }
+            }
         }
         return point!
     }
     
- 
+    private func addLine(_ touches: Set<UITouch>) {
+        let cursor = getPoint(touches)
+        self.currentLines?.append(cursor)
+        self.currentPath.addLine(to: cursor)
+    }
+    
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if let workingPath=currentPath {
+        addLine(touches)
+        self.allPaths[self.currentColor]?.append(self.currentPath)
+        self.currentPath = UIBezierPath()
+        self.currentPath.lineWidth = 3.0
+
+        if let workingPath=currentLines {
             paths.append((workingPath, currentColor))
         }
     }
@@ -133,12 +162,19 @@ class MyView: UIView {
     }
     
     override func draw(_ rect: CGRect) {
-        paths.forEach{ pathData in
-            drawLine(points: pathData.points, color: pathData.color)
+        allPaths.forEach {
+            set(color: $0.key)
+            $0.value.stroke()
         }
-        if let workingPath = currentPath {
-            drawLine(points: workingPath, color: currentColor)
-        }
+        set(color: self.currentColor)
+        self.currentPath.stroke()
+
+//        paths.forEach{ pathData in
+//            drawLine(points: pathData.points, color: pathData.color)
+//        }
+//        if let workingPath = currentLines {
+//            drawLine(points: workingPath, color: currentColor)
+//        }
     }
     
     func drawLine(points: [CGPoint], color colorString: String) {
@@ -153,8 +189,9 @@ class MyView: UIView {
     }
     
     func clear() {
-        currentPath = nil
+        currentLines = nil
         ref.child("paths").removeValue()
         pointIndex = 0
+        initAllPaths()
     }
 }

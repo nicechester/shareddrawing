@@ -11,9 +11,15 @@ import Firebase
 
 class ViewController: UIViewController {
     @IBOutlet weak var myView: MyView!
+    @IBOutlet weak var redButton: UIButton!
+    @IBOutlet weak var blueButton: UIButton!
+    @IBOutlet weak var orangeButton: UIButton!
+    @IBOutlet weak var yellowButton: UIButton!
+    var colorButtons = [UIButton]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        colorButtons = [redButton, blueButton, orangeButton, yellowButton]
         myView.ref = FIRDatabase.database().reference()
         myView.myID = UIDevice.current.identifierForVendor?.uuidString ?? "iPAD"
         myView.initAllPaths()
@@ -30,6 +36,9 @@ class ViewController: UIViewController {
 
     @IBAction func setColor(_ sender: UIButton) {
         myView.currentColor = sender.currentTitle!
+        colorButtons.forEach { button in
+            button.isSelected = button==sender
+        }
     }
 }
 

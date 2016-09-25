@@ -65,14 +65,14 @@ class MyView: UIView {
     func update(with pathInfo: [String:Any]) {
         if let color = pathInfo["color"] as? String, let points = pathInfo["points"] as? [[CGFloat]], points.count>0 {
             let path=UIBezierPath()
-            path.move(to: makeCGPoint(with: points[0]))
-            points.forEach { path.addLine(to: makeCGPoint(with: $0)) }
+            path.move(to: makeCGPoint(points[0]))
+            points.forEach { path.addLine(to: makeCGPoint($0)) }
             self.allPaths[color]?.append(path)
         }
         self.setNeedsDisplay()
     }
     
-    func makeCGPoint(with point: [CGFloat]) -> CGPoint {
+    func makeCGPoint(_ point: [CGFloat]) -> CGPoint {
         return CGPoint(x: point[0], y: point[1])
     }
     
@@ -121,6 +121,9 @@ class MyView: UIView {
         if let lines=currentLines {
             DispatchQueue.global(qos: .userInitiated).async {
                 self.ref.child("paths").child(self.pathID).child("points").setValue(lines)
+                DispatchQueue.main.async {
+                    self.currentLines = []
+                }
             }
         }
     }

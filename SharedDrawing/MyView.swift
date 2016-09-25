@@ -13,19 +13,17 @@ class MyView: UIView {
     var myID = "Chester's iPAD"
     var pathID = "-1"
     var currentColor = "Blue"
-    var currentLines: [CGPoint]?
+    var currentLines: [[CGFloat]]?
     var currentPath = UIBezierPath()
     var allPaths: [String:UIBezierPath] = [:]
-    var pointIndex = 0
-    var paths = [(points: [CGPoint], color: String)]()
     var ref: FIRDatabaseReference! {
         didSet {
             ref.child("paths").observeSingleEvent(of: .value, with: initPaths)
             ref.child("paths").observe(.childAdded, with: changePaths)
             ref.child("paths").observe(.childChanged, with: changePaths)
             ref.child("paths").observe(.childRemoved, with: {_ in
-                self.paths = []
                 self.currentLines = nil
+                self.initAllPaths()
                 self.setNeedsDisplay()
             })
         }
@@ -61,38 +59,21 @@ class MyView: UIView {
         }
         currentPath = UIBezierPath()
         currentPath.lineWidth = 3.0
+        currentLines = []
     }
 
     func update(with pathInfo: [String:Any]) {
-        if let color = pathInfo["color"] as? String {
-            var cgPoints: [CGPoint]?
-            if let mapPoints = pathInfo["points"] as? [String: [String: CGFloat]] {
-                cgPoints = makeCGPoints(with: mapPoints)
-            } else if let points = pathInfo["points"] as? [[String: CGFloat]] {
-                cgPoints = makeCGPoints(with: points)
-            }
-            if let realCGPoints = cgPoints {
-                self.paths.append((points: realCGPoints, color: color))
-            }
+        if let color = pathInfo["color"] as? String, let points = pathInfo["points"] as? [[CGFloat]], points.count>0 {
+            let path=UIBezierPath()
+            path.move(to: makeCGPoint(with: points[0]))
+            points.forEach { path.addLine(to: makeCGPoint(with: $0)) }
+            self.allPaths[color]?.append(path)
         }
         self.setNeedsDisplay()
     }
     
-    func makeCGPoints(with points: [String: [String: CGFloat]]) -> [CGPoint] {
-        var cgPoints = [CGPoint]()
-        let keys = Array(points.keys).sorted(by: <)
-        keys.forEach { key in
-            if let p = points[key] {
-                cgPoints.append(CGPoint(x: p["x"]!, y: p["y"]!))
-            }
-        }
-        return cgPoints
-    }
-    
-    func makeCGPoints(with points: [[String: CGFloat]]) -> [CGPoint] {
-        var cgPoints = [CGPoint]()
-        points.forEach { p in cgPoints.append(CGPoint(x: p["x"]!, y: p["y"]!)) }
-        return cgPoints
+    func makeCGPoint(with point: [CGFloat]) -> CGPoint {
+        return CGPoint(x: point[0], y: point[1])
     }
     
     func set(color colorString: String) {
@@ -114,46 +95,33 @@ class MyView: UIView {
         self.pathID = ref.child("path").childByAutoId().key
         self.ref.child("paths").child(pathID).child("color").setValue(currentColor)
         self.ref.child("paths").child(pathID).child("user").setValue(myID)
-        self.currentLines = []
-        let cursor = getPoint(touches)
-        self.currentLines?.append(cursor)
-        self.currentPath.move(to: cursor)
+        if let cursor = touches.first?.location(in: self) {
+            self.currentPath.move(to: cursor)
+        }
         setNeedsDisplay()
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        setNeedsDisplay()
         addLine(touches)
+        setNeedsDisplay()
     }
-    
-    private func getPoint(_ touches: Set<UITouch>) -> CGPoint {
-        let point = touches.first?.location(in: self)
-        if let rp = point {
-            DispatchQueue.global(qos: .userInitiated).async {
-                let coord = ["x":rp.x, "y":rp.y]
-                self.ref.child("paths").child(self.pathID).child("points").child("\(self.pointIndex)").setValue(coord)
-                DispatchQueue.main.async {
-                    self.pointIndex += 1
-                }
-            }
-        }
-        return point!
-    }
-    
+
     private func addLine(_ touches: Set<UITouch>) {
-        let cursor = getPoint(touches)
-        self.currentLines?.append(cursor)
-        self.currentPath.addLine(to: cursor)
+        if let cursor = touches.first?.location(in: self) {
+            self.currentLines?.append([cursor.x, cursor.y])
+            self.currentPath.addLine(to: cursor)
+        }
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        addLine(touches)
         self.allPaths[self.currentColor]?.append(self.currentPath)
         self.currentPath = UIBezierPath()
         self.currentPath.lineWidth = 3.0
 
-        if let workingPath=currentLines {
-            paths.append((workingPath, currentColor))
+        if let lines=currentLines {
+            DispatchQueue.global(qos: .userInitiated).async {
+                self.ref.child("paths").child(self.pathID).child("points").setValue(lines)
+            }
         }
     }
     
@@ -162,36 +130,17 @@ class MyView: UIView {
     }
     
     override func draw(_ rect: CGRect) {
-        allPaths.forEach {
-            set(color: $0.key)
-            $0.value.stroke()
+        allPaths.forEach { pathByColor in
+            set(color: pathByColor.key)
+            pathByColor.value.stroke()
         }
         set(color: self.currentColor)
         self.currentPath.stroke()
-
-//        paths.forEach{ pathData in
-//            drawLine(points: pathData.points, color: pathData.color)
-//        }
-//        if let workingPath = currentLines {
-//            drawLine(points: workingPath, color: currentColor)
-//        }
-    }
-    
-    func drawLine(points: [CGPoint], color colorString: String) {
-        let path = UIBezierPath()
-        path.move(to: points[0])
-        path.lineWidth = 5.0
-        points[1..<points.count].forEach { p in
-            path.addLine(to: p)
-        }
-        set(color: colorString)
-        path.stroke()
     }
     
     func clear() {
         currentLines = nil
         ref.child("paths").removeValue()
-        pointIndex = 0
         initAllPaths()
     }
 }

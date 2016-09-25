@@ -12,6 +12,13 @@ import Firebase
 class MyView: UIView {
     var myID = "Chester's iPAD"
     var pathID = "-1"
+    var canvasID = "1" {
+        didSet {
+            self.currentLines = nil
+            self.initAllPaths()
+            self.wireFB()
+        }
+    }
     var currentColor = "Blue"
     var currentLines: [[CGFloat]]?
     var currentPath = UIBezierPath()
@@ -20,14 +27,18 @@ class MyView: UIView {
     
     var ref: FIRDatabaseReference! {
         didSet {
-            ref.child("paths").observe(.childAdded, with: changePaths)
-            ref.child("paths").observe(.childChanged, with: changePaths)
-            ref.child("paths").observe(.childRemoved, with: {_ in
-                self.currentLines = nil
-                self.initAllPaths()
-                self.setNeedsDisplay()
-            })
+            self.wireFB()
         }
+    }
+
+    private func wireFB() {
+        ref.child(canvasID).child("paths").observe(.childAdded, with: changePaths)
+        ref.child(canvasID).child("paths").observe(.childChanged, with: changePaths)
+        ref.child(canvasID).child("paths").observe(.childRemoved, with: {_ in
+            self.currentLines = nil
+            self.initAllPaths()
+            self.setNeedsDisplay()
+        })
     }
 
     static func alwaysReturnsTrue(_ snapshot: FIRDataSnapshot, _ currentUserID: String) -> Bool {
@@ -91,9 +102,9 @@ class MyView: UIView {
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        self.pathID = ref.child("path").childByAutoId().key
-        self.ref.child("paths").child(pathID).child("color").setValue(currentColor)
-        self.ref.child("paths").child(pathID).child("user").setValue(myID)
+        self.pathID = ref.child(canvasID).child("paths").childByAutoId().key
+        self.ref.child(canvasID).child("paths").child(pathID).child("color").setValue(currentColor)
+        self.ref.child(canvasID).child("paths").child(pathID).child("user").setValue(myID)
         if let cursor = touches.first?.location(in: self) {
             self.currentPath.move(to: cursor)
         }
@@ -119,7 +130,7 @@ class MyView: UIView {
         self.userCheck = MyView.isNotCurrentUser
         if let lines=currentLines {
             DispatchQueue.global(qos: .userInitiated).async {
-                self.ref.child("paths").child(self.pathID).child("points").setValue(lines)
+                self.ref.child(self.canvasID).child("paths").child(self.pathID).child("points").setValue(lines)
                 DispatchQueue.main.async {
                     self.currentLines = []
                 }
@@ -142,7 +153,7 @@ class MyView: UIView {
     
     func clear() {
         currentLines = nil
-        ref.child("paths").removeValue()
+        ref.child(canvasID).child("paths").removeValue()
         initAllPaths()
     }
 }

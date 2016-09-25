@@ -73,6 +73,13 @@
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="PfZ-Zu-xKI">
+                        <barButtonItem key="leftBarButtonItem" title="Open" id="uln-Yd-Aq7">
+                            <connections>
+                                <segue destination="eqb-8Y-HAB" kind="popoverPresentation" popoverAnchorBarButtonItem="uln-Yd-Aq7" id="9ii-m2-Nhw">
+                                    <popoverArrowDirection key="popoverArrowDirection" up="YES" down="YES" left="YES" right="YES"/>
+                                </segue>
+                            </connections>
+                        </barButtonItem>
                         <barButtonItem key="rightBarButtonItem" systemItem="trash" id="2LU-ze-Ea8">
                             <connections>
                                 <action selector="clear:" destination="BYZ-38-t0r" id="kOu-FD-haA"/>
@@ -90,6 +97,61 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="1076" y="138.98050974512745"/>
+        </scene>
+        <!--Open CanvasID Popover View Controller-->
+        <scene sceneID="Bht-zF-CaT">
+            <objects>
+                <viewController id="eqb-8Y-HAB" customClass="OpenCanvasIDPopoverViewController" customModule="SharedDrawing" customModuleProvider="target" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="wli-0Y-IY0"/>
+                        <viewControllerLayoutGuide type="bottom" id="xUS-pU-qIG"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="fUA-Ok-jRs">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Enter a Canvas ID" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="t6o-nN-nKY">
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="137" id="UP1-j6-n9H"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Alphanumeric.  Leave blank to create new." textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="DnG-4e-9YS">
+                                <nil key="textColor"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                <textInputTraits key="textInputTraits"/>
+                            </textField>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="wRV-4A-emy">
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="46" id="iNn-Zt-iwu"/>
+                                </constraints>
+                                <state key="normal" title="OK"/>
+                                <connections>
+                                    <action selector="okTapped:" destination="eqb-8Y-HAB" eventType="touchUpInside" id="FpK-nR-n1e"/>
+                                </connections>
+                            </button>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <constraints>
+                            <constraint firstItem="DnG-4e-9YS" firstAttribute="top" secondItem="t6o-nN-nKY" secondAttribute="bottom" constant="8" symbolic="YES" id="CvG-3f-IaH"/>
+                            <constraint firstItem="wRV-4A-emy" firstAttribute="top" secondItem="DnG-4e-9YS" secondAttribute="bottom" constant="8" symbolic="YES" id="Edb-KL-l4A"/>
+                            <constraint firstItem="t6o-nN-nKY" firstAttribute="top" secondItem="wli-0Y-IY0" secondAttribute="bottom" constant="8" symbolic="YES" id="IQp-IE-VKF"/>
+                            <constraint firstItem="t6o-nN-nKY" firstAttribute="centerX" secondItem="DnG-4e-9YS" secondAttribute="centerX" id="M0Z-SE-QbU"/>
+                            <constraint firstItem="DnG-4e-9YS" firstAttribute="leading" secondItem="fUA-Ok-jRs" secondAttribute="leadingMargin" id="NkZ-Aq-q5u"/>
+                            <constraint firstItem="DnG-4e-9YS" firstAttribute="trailing" secondItem="fUA-Ok-jRs" secondAttribute="trailingMargin" id="cqf-6I-BQs"/>
+                            <constraint firstItem="DnG-4e-9YS" firstAttribute="centerX" secondItem="wRV-4A-emy" secondAttribute="centerX" id="ygs-59-ElF"/>
+                        </constraints>
+                    </view>
+                    <value key="contentSizeForViewInPopover" type="size" width="375" height="120"/>
+                    <connections>
+                        <outlet property="canvasIDText" destination="DnG-4e-9YS" id="b47-AA-Y9H"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="RH1-IY-5RP" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1832.8" y="134.48275862068968"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="YX2-yG-C5a">

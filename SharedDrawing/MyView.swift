@@ -13,73 +13,66 @@ class MyView: UIView {
     var myID = "Chester's iPAD"
     var pathID = "-1"
     var currentColor = "Blue"
-    var currentPath: [CGPoint]?
-    var pointIndex = 0
-    var paths = [(points: [CGPoint], color: String)]()
+    var currentLines: [[CGFloat]]?
+    var currentPath = UIBezierPath()
+    var allPaths: [String:UIBezierPath] = [:]
+    var userCheck: (FIRDataSnapshot, String) -> Bool = MyView.alwaysReturnsTrue
+    
     var ref: FIRDatabaseReference! {
         didSet {
-            ref.child("paths").observeSingleEvent(of: .value, with: initPaths)
             ref.child("paths").observe(.childAdded, with: changePaths)
             ref.child("paths").observe(.childChanged, with: changePaths)
             ref.child("paths").observe(.childRemoved, with: {_ in
-                self.paths = []
-                self.currentPath = nil
+                self.currentLines = nil
+                self.initAllPaths()
                 self.setNeedsDisplay()
             })
         }
     }
 
-    func isNotCurrentUser(_ snapshot: FIRDataSnapshot) -> Bool {
+    static func alwaysReturnsTrue(_ snapshot: FIRDataSnapshot, _ currentUserID: String) -> Bool {
+        return true
+    }
+
+    static func isNotCurrentUser(_ snapshot: FIRDataSnapshot, _ currentUserID: String) -> Bool {
         if let pathInfo = snapshot.value as? [String:Any] {
-            if let user = pathInfo["user"] as? String, myID==user {
+            if let user = pathInfo["user"] as? String, currentUserID==user {
                 return false
             }
         }
         return true
     }
     
-    func initPaths(snapshot: FIRDataSnapshot) {
-        if let pathInfo = snapshot.value as? [String:Any] {
-            update(with: pathInfo)
-        }
-    }
-
     func changePaths(snapshot: FIRDataSnapshot) {
-        if let pathInfo = snapshot.value as? [String:Any], self.isNotCurrentUser(snapshot) {
+        if let pathInfo = snapshot.value as? [String:Any], self.userCheck(snapshot, myID) {
             update(with: pathInfo)
         }
     }
     
+    func initAllPaths() {
+        let colors = ["Red", "Blue", "Orange", "Yellow"]
+        colors.forEach {
+            let path = UIBezierPath()
+            path.lineWidth = 3.0
+            allPaths[$0] = path
+        }
+        currentPath = UIBezierPath()
+        currentPath.lineWidth = 3.0
+        currentLines = []
+    }
+
     func update(with pathInfo: [String:Any]) {
-        if let color = pathInfo["color"] as? String {
-            var cgPoints: [CGPoint]?
-            if let mapPoints = pathInfo["points"] as? [String: [String: CGFloat]] {
-                cgPoints = makeCGPoints(with: mapPoints)
-            } else if let points = pathInfo["points"] as? [[String: CGFloat]] {
-                cgPoints = makeCGPoints(with: points)
-            }
-            if let realCGPoints = cgPoints {
-                self.paths.append((points: realCGPoints, color: color))
-            }
+        if let color = pathInfo["color"] as? String, let points = pathInfo["points"] as? [[CGFloat]], points.count>0 {
+            let path=UIBezierPath()
+            path.move(to: makeCGPoint(points[0]))
+            points.forEach { path.addLine(to: makeCGPoint($0)) }
+            self.allPaths[color]?.append(path)
         }
         self.setNeedsDisplay()
     }
     
-    func makeCGPoints(with points: [String: [String: CGFloat]]) -> [CGPoint] {
-        var cgPoints = [CGPoint]()
-        let keys = Array(points.keys).sorted(by: <)
-        keys.forEach { key in
-            if let p = points[key] {
-                cgPoints.append(CGPoint(x: p["x"]!, y: p["y"]!))
-            }
-        }
-        return cgPoints
-    }
-    
-    func makeCGPoints(with points: [[String: CGFloat]]) -> [CGPoint] {
-        var cgPoints = [CGPoint]()
-        points.forEach { p in cgPoints.append(CGPoint(x: p["x"]!, y: p["y"]!)) }
-        return cgPoints
+    func makeCGPoint(_ point: [CGFloat]) -> CGPoint {
+        return CGPoint(x: point[0], y: point[1])
     }
     
     func set(color colorString: String) {
@@ -101,30 +94,36 @@ class MyView: UIView {
         self.pathID = ref.child("path").childByAutoId().key
         self.ref.child("paths").child(pathID).child("color").setValue(currentColor)
         self.ref.child("paths").child(pathID).child("user").setValue(myID)
-        self.currentPath = []
-        self.currentPath?.append(getPoint(touches))
+        if let cursor = touches.first?.location(in: self) {
+            self.currentPath.move(to: cursor)
+        }
         setNeedsDisplay()
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        currentPath?.append(getPoint(touches))
+        addLine(touches)
         setNeedsDisplay()
     }
-    
-    private func getPoint(_ touches: Set<UITouch>) -> CGPoint {
-        let point = touches.first?.location(in: self)
-        if let rp = point {
-            let coord = ["x":rp.x, "y":rp.y]
-            ref.child("paths").child(pathID).child("points").child("\(pointIndex)").setValue(coord)
-            pointIndex += 1
+
+    private func addLine(_ touches: Set<UITouch>) {
+        if let cursor = touches.first?.location(in: self) {
+            self.currentLines?.append([cursor.x, cursor.y])
+            self.currentPath.addLine(to: cursor)
         }
-        return point!
     }
     
- 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if let workingPath=currentPath {
-            paths.append((workingPath, currentColor))
+        self.allPaths[self.currentColor]?.append(self.currentPath)
+        self.currentPath = UIBezierPath()
+        self.currentPath.lineWidth = 3.0
+        self.userCheck = MyView.isNotCurrentUser
+        if let lines=currentLines {
+            DispatchQueue.global(qos: .userInitiated).async {
+                self.ref.child("paths").child(self.pathID).child("points").setValue(lines)
+                DispatchQueue.main.async {
+                    self.currentLines = []
+                }
+            }
         }
     }
     
@@ -133,28 +132,17 @@ class MyView: UIView {
     }
     
     override func draw(_ rect: CGRect) {
-        paths.forEach{ pathData in
-            drawLine(points: pathData.points, color: pathData.color)
+        allPaths.forEach { pathByColor in
+            set(color: pathByColor.key)
+            pathByColor.value.stroke()
         }
-        if let workingPath = currentPath {
-            drawLine(points: workingPath, color: currentColor)
-        }
-    }
-    
-    func drawLine(points: [CGPoint], color colorString: String) {
-        let path = UIBezierPath()
-        path.move(to: points[0])
-        path.lineWidth = 5.0
-        points[1..<points.count].forEach { p in
-            path.addLine(to: p)
-        }
-        set(color: colorString)
-        path.stroke()
+        set(color: self.currentColor)
+        self.currentPath.stroke()
     }
     
     func clear() {
-        currentPath = nil
+        currentLines = nil
         ref.child("paths").removeValue()
-        pointIndex = 0
+        initAllPaths()
     }
 }

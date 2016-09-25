@@ -16,9 +16,10 @@ class MyView: UIView {
     var currentLines: [[CGFloat]]?
     var currentPath = UIBezierPath()
     var allPaths: [String:UIBezierPath] = [:]
+    var userCheck: (FIRDataSnapshot, String) -> Bool = MyView.alwaysReturnsTrue
+    
     var ref: FIRDatabaseReference! {
         didSet {
-            ref.child("paths").observeSingleEvent(of: .value, with: initPaths)
             ref.child("paths").observe(.childAdded, with: changePaths)
             ref.child("paths").observe(.childChanged, with: changePaths)
             ref.child("paths").observe(.childRemoved, with: {_ in
@@ -29,23 +30,21 @@ class MyView: UIView {
         }
     }
 
-    func isNotCurrentUser(_ snapshot: FIRDataSnapshot) -> Bool {
+    static func alwaysReturnsTrue(_ snapshot: FIRDataSnapshot, _ currentUserID: String) -> Bool {
+        return true
+    }
+
+    static func isNotCurrentUser(_ snapshot: FIRDataSnapshot, _ currentUserID: String) -> Bool {
         if let pathInfo = snapshot.value as? [String:Any] {
-            if let user = pathInfo["user"] as? String, myID==user {
+            if let user = pathInfo["user"] as? String, currentUserID==user {
                 return false
             }
         }
         return true
     }
     
-    func initPaths(snapshot: FIRDataSnapshot) {
-        if let pathInfo = snapshot.value as? [String:Any] {
-            update(with: pathInfo)
-        }
-    }
-
     func changePaths(snapshot: FIRDataSnapshot) {
-        if let pathInfo = snapshot.value as? [String:Any], self.isNotCurrentUser(snapshot) {
+        if let pathInfo = snapshot.value as? [String:Any], self.userCheck(snapshot, myID) {
             update(with: pathInfo)
         }
     }
@@ -117,7 +116,7 @@ class MyView: UIView {
         self.allPaths[self.currentColor]?.append(self.currentPath)
         self.currentPath = UIBezierPath()
         self.currentPath.lineWidth = 3.0
-
+        self.userCheck = MyView.isNotCurrentUser
         if let lines=currentLines {
             DispatchQueue.global(qos: .userInitiated).async {
                 self.ref.child("paths").child(self.pathID).child("points").setValue(lines)

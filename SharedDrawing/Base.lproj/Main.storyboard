@@ -80,7 +80,11 @@
                         </barButtonItem>
                     </navigationItem>
                     <connections>
+                        <outlet property="blueButton" destination="GHB-0K-D5P" id="ZuV-ol-Zk0"/>
                         <outlet property="myView" destination="wCH-2v-0OL" id="3SQ-N1-8oO"/>
+                        <outlet property="orangeButton" destination="QBB-py-ncd" id="JBg-qw-AbJ"/>
+                        <outlet property="redButton" destination="ERY-Hn-l0M" id="b3x-qh-mHY"/>
+                        <outlet property="yellowButton" destination="U7H-Bc-2ov" id="2Wt-pb-43w"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>

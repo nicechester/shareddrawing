@@ -17,6 +17,7 @@ class MyView: UIView {
             self.currentLines = nil
             self.initAllPaths()
             self.wireFB()
+            self.setNeedsDisplay()
         }
     }
     var currentColor = "Blue"
@@ -24,6 +25,7 @@ class MyView: UIView {
     var currentPath = UIBezierPath()
     var allPaths: [String:UIBezierPath] = [:]
     var userCheck: (FIRDataSnapshot, String) -> Bool = MyView.alwaysReturnsTrue
+    var fbHandles: [UInt] = [0, 0, 0]
     
     var ref: FIRDatabaseReference! {
         didSet {
@@ -32,9 +34,14 @@ class MyView: UIView {
     }
 
     private func wireFB() {
-        ref.child(canvasID).child("paths").observe(.childAdded, with: changePaths)
-        ref.child(canvasID).child("paths").observe(.childChanged, with: changePaths)
-        ref.child(canvasID).child("paths").observe(.childRemoved, with: {_ in
+        fbHandles.forEach { h in
+            if h != 0 {
+                ref.removeObserver(withHandle: h)
+            }
+        }
+        fbHandles[0] = ref.child(canvasID).child("paths").observe(.childAdded, with: changePaths)
+        fbHandles[1] = ref.child(canvasID).child("paths").observe(.childChanged, with: changePaths)
+        fbHandles[2] = ref.child(canvasID).child("paths").observe(.childRemoved, with: {_ in
             self.currentLines = nil
             self.initAllPaths()
             self.setNeedsDisplay()
@@ -156,4 +163,13 @@ class MyView: UIView {
         ref.child(canvasID).child("paths").removeValue()
         initAllPaths()
     }
+
+    func existCanvas(with canvasID: String) -> Bool {
+        var doesExist = false
+        self.ref.observeSingleEvent(of: .value, with: { snapshot in
+            doesExist = snapshot.hasChild(canvasID)
+        })
+        return doesExist
+    }
+
 }

@@ -10,6 +10,9 @@ import UIKit
 import Firebase
 
 class ViewController: UIViewController, CanvasViewDelegate {
+    private let letters = Array("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".characters)
+    private let len = 5
+    
     @IBOutlet weak var myView: MyView!
     @IBOutlet weak var redButton: UIButton!
     @IBOutlet weak var blueButton: UIButton!
@@ -46,13 +49,16 @@ class ViewController: UIViewController, CanvasViewDelegate {
     }
 
     func setCanvas(id: String) {
-        myView.canvasID = (id=="") ? newCanvasID() : id
-        self.title = myView.canvasID
+        var canvasID = id
+        if canvasID == "" {
+            repeat {
+                canvasID = newCanvasID()
+            } while myView.existCanvas(with: canvasID)
+        }
+        myView.canvasID = canvasID
+        self.title = canvasID
     }
-
-    private let letters = Array("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".characters)
-    private let len = 5
-
+    
     private func newCanvasID() -> String {
         var randomString = ""
         for _ in 0..<len {

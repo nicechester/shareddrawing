@@ -18,8 +18,9 @@
 		B00F00541D8B56CA00865C43 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B00F00521D8B56CA00865C43 /* LaunchScreen.storyboard */; };
 		B00F005F1D8B56CB00865C43 /* SharedDrawingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00F005E1D8B56CB00865C43 /* SharedDrawingTests.swift */; };
 		B00F006A1D8B56CB00865C43 /* SharedDrawingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00F00691D8B56CB00865C43 /* SharedDrawingUITests.swift */; };
-		B00F00781D8B571A00865C43 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B00F00771D8B571A00865C43 /* GoogleService-Info.plist */; };
 		B00F007C1D8B70B300865C43 /* MyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00F007B1D8B70B300865C43 /* MyView.swift */; };
+		B05E489D1D99BD460076BF39 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B05E489C1D99BD460076BF39 /* GoogleService-Info.plist */; };
+		B0F9E3311D98863200ECD2A1 /* OpenCanvasIDPopoverViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0F9E3301D98863100ECD2A1 /* OpenCanvasIDPopoverViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,8 +61,9 @@
 		B00F00651D8B56CB00865C43 /* SharedDrawingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SharedDrawingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B00F00691D8B56CB00865C43 /* SharedDrawingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDrawingUITests.swift; sourceTree = "<group>"; };
 		B00F006B1D8B56CB00865C43 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		B00F00771D8B571A00865C43 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		B00F007B1D8B70B300865C43 /* MyView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MyView.swift; sourceTree = "<group>"; };
+		B05E489C1D99BD460076BF39 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		B0F9E3301D98863100ECD2A1 /* OpenCanvasIDPopoverViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OpenCanvasIDPopoverViewController.swift; sourceTree = "<group>"; };
 		E651FFEC25ED49FA87116AA3 /* Pods_SharedDrawing.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SharedDrawing.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E8A6FB2BF34A5D973D8889F3 /* Pods-SharedDrawing.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SharedDrawing.debug.xcconfig"; path = "Pods/Target Support Files/Pods-SharedDrawing/Pods-SharedDrawing.debug.xcconfig"; sourceTree = "<group>"; };
 		F1C6C694EA6E4B40B1A35072 /* Pods_SharedDrawingUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SharedDrawingUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -146,12 +148,13 @@
 				B00F00461D8B56CA00865C43 /* AppDelegate.swift */,
 				B00F00481D8B56CA00865C43 /* ViewController.swift */,
 				B00F007B1D8B70B300865C43 /* MyView.swift */,
+				B0F9E3301D98863100ECD2A1 /* OpenCanvasIDPopoverViewController.swift */,
 				B00F004A1D8B56CA00865C43 /* Main.storyboard */,
 				B00F00501D8B56CA00865C43 /* Assets.xcassets */,
 				B00F00521D8B56CA00865C43 /* LaunchScreen.storyboard */,
 				B00F00551D8B56CA00865C43 /* Info.plist */,
 				B00F004D1D8B56CA00865C43 /* SharedDrawing.xcdatamodeld */,
-				B00F00771D8B571A00865C43 /* GoogleService-Info.plist */,
+				B05E489C1D99BD460076BF39 /* GoogleService-Info.plist */,
 			);
 			path = SharedDrawing;
 			sourceTree = "<group>";
@@ -293,7 +296,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B00F00541D8B56CA00865C43 /* LaunchScreen.storyboard in Resources */,
-				B00F00781D8B571A00865C43 /* GoogleService-Info.plist in Resources */,
+				B05E489D1D99BD460076BF39 /* GoogleService-Info.plist in Resources */,
 				B00F00511D8B56CA00865C43 /* Assets.xcassets in Resources */,
 				B00F004C1D8B56CA00865C43 /* Main.storyboard in Resources */,
 			);
@@ -445,6 +448,7 @@
 			files = (
 				B00F007C1D8B70B300865C43 /* MyView.swift in Sources */,
 				B00F00491D8B56CA00865C43 /* ViewController.swift in Sources */,
+				B0F9E3311D98863200ECD2A1 /* OpenCanvasIDPopoverViewController.swift in Sources */,
 				B00F00471D8B56CA00865C43 /* AppDelegate.swift in Sources */,
 				B00F004F1D8B56CA00865C43 /* SharedDrawing.xcdatamodeld in Sources */,
 			);

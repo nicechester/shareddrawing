@@ -15,7 +15,7 @@ class MyView: UIView {
     var canvasID = "1" {
         didSet {
             self.currentLines = nil
-            self.initAllPaths()
+//            self.initAllPaths()
             self.wireFB()
             self.setNeedsDisplay()
         }
@@ -23,7 +23,8 @@ class MyView: UIView {
     var currentColor = "Blue"
     var currentLines: [[CGFloat]]?
     var currentPath = UIBezierPath()
-    var allPaths: [String:UIBezierPath] = [:]
+    var incrImage: UIImage?
+//    var allPaths: [String:UIBezierPath] = [:]
     var userCheck: (FIRDataSnapshot, String) -> Bool = MyView.alwaysReturnsTrue
     var fbHandles: [UInt] = [0, 0, 0]
     
@@ -43,7 +44,7 @@ class MyView: UIView {
         fbHandles[1] = ref.child(canvasID).child("paths").observe(.childChanged, with: changePaths)
         fbHandles[2] = ref.child(canvasID).child("paths").observe(.childRemoved, with: {_ in
             self.currentLines = nil
-            self.initAllPaths()
+//            self.initAllPaths()
             self.setNeedsDisplay()
         })
     }
@@ -67,24 +68,26 @@ class MyView: UIView {
         }
     }
     
-    func initAllPaths() {
-        let colors = ["Red", "Blue", "Orange", "Yellow"]
-        colors.forEach {
-            let path = UIBezierPath()
-            path.lineWidth = 3.0
-            allPaths[$0] = path
-        }
-        currentPath = UIBezierPath()
-        currentPath.lineWidth = 3.0
-        currentLines = []
-    }
+//    func initAllPaths() {
+//        let colors = ["Red", "Blue", "Orange", "Yellow"]
+//        colors.forEach {
+//            let path = UIBezierPath()
+//            path.lineWidth = 3.0
+//            allPaths[$0] = path
+//        }
+//        currentPath = UIBezierPath()
+//        currentPath.lineWidth = 3.0
+//        currentLines = []
+//    }
 
     func update(with pathInfo: [String:Any]) {
         if let color = pathInfo["color"] as? String, let points = pathInfo["points"] as? [[CGFloat]], points.count>0 {
             let path=UIBezierPath()
+            path.lineWidth = 3.0
             path.move(to: makeCGPoint(points[0]))
             points.forEach { path.addLine(to: makeCGPoint($0)) }
-            self.allPaths[color]?.append(path)
+            self.drawBitmap(path: path, color: color)
+//            self.allPaths[color]?.append(path)
         }
         self.setNeedsDisplay()
     }
@@ -131,7 +134,8 @@ class MyView: UIView {
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        self.allPaths[self.currentColor]?.append(self.currentPath)
+//        self.allPaths[self.currentColor]?.append(self.currentPath)
+        self.drawBitmap(path: self.currentPath, color: self.currentColor)
         self.currentPath = UIBezierPath()
         self.currentPath.lineWidth = 3.0
         self.userCheck = MyView.isNotCurrentUser
@@ -148,20 +152,36 @@ class MyView: UIView {
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         
     }
+
+    private func drawBitmap(path: UIBezierPath, color: String) {
+        UIGraphicsBeginImageContextWithOptions(self.bounds.size, true, 0.0)
+        set(color: color)
+        if (incrImage == nil) {
+            let rectPath = UIBezierPath(rect: self.bounds)
+            UIColor.white.setFill()
+            rectPath.fill()
+        }
+        incrImage?.draw(at: CGPoint.zero)
+        path.stroke()
+        incrImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+    }
     
     override func draw(_ rect: CGRect) {
-        allPaths.forEach { pathByColor in
-            set(color: pathByColor.key)
-            pathByColor.value.stroke()
-        }
+        incrImage?.draw(in: rect)
+//        allPaths.forEach { pathByColor in
+//            set(color: pathByColor.key)
+//            pathByColor.value.stroke()
+//        }
         set(color: self.currentColor)
         self.currentPath.stroke()
     }
+
     
     func clear() {
         currentLines = nil
         ref.child(canvasID).child("paths").removeValue()
-        initAllPaths()
+//        initAllPaths()
     }
 
     func existCanvas(with canvasID: String) -> Bool {

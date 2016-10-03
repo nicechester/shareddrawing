@@ -25,13 +25,9 @@ class ViewController: UIViewController, CanvasViewDelegate {
         colorButtons = [redButton, blueButton, orangeButton, yellowButton]
         myView.ref = FIRDatabase.database().reference()
         myView.myID = UIDevice.current.identifierForVendor?.uuidString ?? "iPAD"
-        myView.initAllPaths()
+//        myView.initAllPaths()
         self.title = myView.canvasID
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+        self.setColor(blueButton)
     }
 
     @IBAction func clear(_ sender: UIBarButtonItem) {

@@ -12,22 +12,31 @@ import Firebase
 class ViewController: UIViewController, CanvasViewDelegate {
     private let letters = Array("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".characters)
     private let len = 5
+    private var modeButtonMap: [UIButton:MyView.CanvasMode] = [:]
     
+    @IBOutlet weak var brushButton: UIButton!
+    @IBOutlet weak var moveButton: UIButton!
     @IBOutlet weak var myView: MyView!
     @IBOutlet weak var redButton: UIButton!
     @IBOutlet weak var blueButton: UIButton!
     @IBOutlet weak var orangeButton: UIButton!
     @IBOutlet weak var yellowButton: UIButton!
-    var colorButtons = [UIButton]()
-    
+    @IBOutlet weak var blackButton: UIButton!
+    private var colorButtons = [UIButton]()
+    private var modeButtons = [UIButton]()
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        colorButtons = [redButton, blueButton, orangeButton, yellowButton]
+        colorButtons = [blackButton, redButton, blueButton, orangeButton, yellowButton]
+        modeButtons = [brushButton, moveButton]
+        modeButtonMap = [brushButton:.brush, moveButton:.move]
         myView.ref = FIRDatabase.database().reference()
         myView.myID = UIDevice.current.identifierForVendor?.uuidString ?? "iPAD"
-//        myView.initAllPaths()
         self.title = myView.canvasID
-        self.setColor(blueButton)
+        self.setColor(blackButton)
+        self.setMode(brushButton)
+        moveButton.imageView?.contentMode = .scaleAspectFit
+        brushButton.imageView?.contentMode = .scaleAspectFit
     }
 
     @IBAction func clear(_ sender: UIBarButtonItem) {
@@ -40,10 +49,21 @@ class ViewController: UIViewController, CanvasViewDelegate {
     @IBAction func setColor(_ sender: UIButton) {
         myView.currentColor = sender.currentTitle!
         colorButtons.forEach { button in
-            button.isSelected = button==sender
+            button.alpha = (button==sender) ? 1.0 : 0.5
+            button.layer.borderColor = ((button==sender) ? UIColor.black : UIColor.clear).cgColor
         }
     }
 
+    @IBAction func setMode(_ sender: UIButton) {
+        modeButtons.forEach { button in
+            button.layer.borderColor = ((button==sender) ? UIColor.brown : UIColor.clear).cgColor
+        }
+        colorButtons.forEach { button in
+            button.isEnabled = (sender==brushButton)
+        }
+        myView.mode = modeButtonMap[sender] ?? .brush
+    }
+    
     func setCanvas(id: String) {
         var canvasID = id
         if canvasID == "" {

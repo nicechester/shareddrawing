@@ -34,6 +34,12 @@ class MyView: UIView {
             self.wireFB()
         }
     }
+    enum CanvasMode {
+        case brush
+        case move
+    }
+
+    var mode = CanvasMode.brush
 
     func initCanvas() {
         currentLines = []
@@ -103,6 +109,8 @@ class MyView: UIView {
     
     func set(color colorString: String) {
         switch colorString {
+        case "Black":
+            UIColor.black.setStroke()
         case "Red":
             UIColor.red.setStroke()
         case "Blue":

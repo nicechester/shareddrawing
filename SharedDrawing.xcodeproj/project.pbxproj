@@ -20,6 +20,8 @@
 		B00F006A1D8B56CB00865C43 /* SharedDrawingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00F00691D8B56CB00865C43 /* SharedDrawingUITests.swift */; };
 		B00F007C1D8B70B300865C43 /* MyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00F007B1D8B70B300865C43 /* MyView.swift */; };
 		B05E489D1D99BD460076BF39 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B05E489C1D99BD460076BF39 /* GoogleService-Info.plist */; };
+		B0DAAF8C1DA1E21900DE52D7 /* hand.png in Resources */ = {isa = PBXBuildFile; fileRef = B0DAAF8B1DA1E21900DE52D7 /* hand.png */; };
+		B0DAAF901DA1E8DF00DE52D7 /* paintbrush.png in Resources */ = {isa = PBXBuildFile; fileRef = B0DAAF8F1DA1E8DF00DE52D7 /* paintbrush.png */; };
 		B0F9E3311D98863200ECD2A1 /* OpenCanvasIDPopoverViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0F9E3301D98863100ECD2A1 /* OpenCanvasIDPopoverViewController.swift */; };
 /* End PBXBuildFile section */
 
@@ -63,6 +65,8 @@
 		B00F006B1D8B56CB00865C43 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B00F007B1D8B70B300865C43 /* MyView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MyView.swift; sourceTree = "<group>"; };
 		B05E489C1D99BD460076BF39 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		B0DAAF8B1DA1E21900DE52D7 /* hand.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = hand.png; sourceTree = "<group>"; };
+		B0DAAF8F1DA1E8DF00DE52D7 /* paintbrush.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = paintbrush.png; sourceTree = "<group>"; };
 		B0F9E3301D98863100ECD2A1 /* OpenCanvasIDPopoverViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OpenCanvasIDPopoverViewController.swift; sourceTree = "<group>"; };
 		E651FFEC25ED49FA87116AA3 /* Pods_SharedDrawing.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SharedDrawing.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E8A6FB2BF34A5D973D8889F3 /* Pods-SharedDrawing.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SharedDrawing.debug.xcconfig"; path = "Pods/Target Support Files/Pods-SharedDrawing/Pods-SharedDrawing.debug.xcconfig"; sourceTree = "<group>"; };
@@ -145,6 +149,7 @@
 		B00F00451D8B56CA00865C43 /* SharedDrawing */ = {
 			isa = PBXGroup;
 			children = (
+				B0DAAF8A1DA1E20A00DE52D7 /* icons */,
 				B00F00461D8B56CA00865C43 /* AppDelegate.swift */,
 				B00F00481D8B56CA00865C43 /* ViewController.swift */,
 				B00F007B1D8B70B300865C43 /* MyView.swift */,
@@ -175,6 +180,15 @@
 				B00F006B1D8B56CB00865C43 /* Info.plist */,
 			);
 			path = SharedDrawingUITests;
+			sourceTree = "<group>";
+		};
+		B0DAAF8A1DA1E20A00DE52D7 /* icons */ = {
+			isa = PBXGroup;
+			children = (
+				B0DAAF8B1DA1E21900DE52D7 /* hand.png */,
+				B0DAAF8F1DA1E8DF00DE52D7 /* paintbrush.png */,
+			);
+			name = icons;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -296,6 +310,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				B00F00541D8B56CA00865C43 /* LaunchScreen.storyboard in Resources */,
+				B0DAAF901DA1E8DF00DE52D7 /* paintbrush.png in Resources */,
+				B0DAAF8C1DA1E21900DE52D7 /* hand.png in Resources */,
 				B05E489D1D99BD460076BF39 /* GoogleService-Info.plist in Resources */,
 				B00F00511D8B56CA00865C43 /* Assets.xcassets in Resources */,
 				B00F004C1D8B56CA00865C43 /* Main.storyboard in Resources */,
@@ -580,11 +596,12 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;

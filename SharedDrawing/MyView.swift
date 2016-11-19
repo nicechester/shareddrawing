@@ -34,13 +34,25 @@ class MyView: UIView {
             self.wireFB()
         }
     }
-    enum CanvasMode {
-        case brush
-        case move
+
+    var mode = brush
+    
+    static let brush = DrawingImpl(drawingBegan, drawingMoved, drawingEnded)
+    static let move = DrawingImpl(doNothing, doNothing, doNothing)
+    
+    typealias touchEventHandler = (MyView) -> (Set<UITouch>, UIEvent?) -> ()
+    
+    class DrawingImpl {
+        let began: touchEventHandler;
+        let moved: touchEventHandler;
+        let ended: touchEventHandler;
+        init(_ began: @escaping touchEventHandler, _ moved: @escaping touchEventHandler, _ ended: @escaping touchEventHandler) {
+            self.began = began
+            self.moved = moved
+            self.ended = ended
+        }
     }
-
-    var mode = CanvasMode.brush
-
+    
     func initCanvas() {
         currentLines = []
         incrImage = nil
@@ -124,7 +136,13 @@ class MyView: UIView {
         }
     }
 
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    func doNothing(_ touches: Set<UITouch>, with event: UIEvent?) {}
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) { mode.began(self)(touches, event); }
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) { mode.moved(self)(touches, event); }
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) { mode.ended(self)(touches, event); }
+
+    func drawingBegan(touches: Set<UITouch>, event: UIEvent?) {
         self.pathID = ref.child(canvasID).child("paths").childByAutoId().key
         self.ref.child(canvasID).child("paths").child(pathID).child("color").setValue(currentColor)
         self.ref.child(canvasID).child("paths").child(pathID).child("user").setValue(myID)
@@ -135,7 +153,8 @@ class MyView: UIView {
         self.currentPath.lineWidth = 3.0
     }
     
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+
+    func drawingMoved(touches: Set<UITouch>, event: UIEvent?) {
         addLine(touches)
         setNeedsDisplay()
     }
@@ -155,7 +174,8 @@ class MyView: UIView {
         }
     }
     
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+
+    func drawingEnded(touches: Set<UITouch>, event: UIEvent?) {
         self.drawBitmap(path: self.currentPath, color: self.currentColor)
         pts[0] = currentPath.currentPoint
         ptsCount = 0;

@@ -12,7 +12,7 @@ import Firebase
 class ViewController: UIViewController, CanvasViewDelegate {
     private let letters = Array("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".characters)
     private let len = 5
-    private var modeButtonMap: [UIButton:MyView.CanvasMode] = [:]
+    private var modeButtonMap: [UIButton:MyView.DrawingImpl] = [:]
     
     @IBOutlet weak var brushButton: UIButton!
     @IBOutlet weak var moveButton: UIButton!
@@ -22,6 +22,7 @@ class ViewController: UIViewController, CanvasViewDelegate {
     @IBOutlet weak var orangeButton: UIButton!
     @IBOutlet weak var yellowButton: UIButton!
     @IBOutlet weak var blackButton: UIButton!
+    @IBOutlet weak var scrollView: UIScrollView!
     private var colorButtons = [UIButton]()
     private var modeButtons = [UIButton]()
 
@@ -29,7 +30,7 @@ class ViewController: UIViewController, CanvasViewDelegate {
         super.viewDidLoad()
         colorButtons = [blackButton, redButton, blueButton, orangeButton, yellowButton]
         modeButtons = [brushButton, moveButton]
-        modeButtonMap = [brushButton:.brush, moveButton:.move]
+        modeButtonMap = [brushButton:MyView.brush, moveButton:MyView.move]
         myView.ref = FIRDatabase.database().reference()
         myView.myID = UIDevice.current.identifierForVendor?.uuidString ?? "iPAD"
         self.title = myView.canvasID
@@ -61,7 +62,8 @@ class ViewController: UIViewController, CanvasViewDelegate {
         colorButtons.forEach { button in
             button.isEnabled = (sender==brushButton)
         }
-        myView.mode = modeButtonMap[sender] ?? .brush
+        myView.mode = modeButtonMap[sender] ?? MyView.brush
+        scrollView.isScrollEnabled = (myView.mode === MyView.move)
     }
     
     func setCanvas(id: String) {

@@ -33,11 +33,18 @@ class ViewController: UIViewController, CanvasViewDelegate {
         modeButtonMap = [brushButton:MyView.brush, moveButton:MyView.move]
         myView.ref = FIRDatabase.database().reference()
         myView.myID = UIDevice.current.identifierForVendor?.uuidString ?? "iPAD"
+        myView.layer.borderColor = UIColor.black.cgColor
+        myView.layer.borderWidth = 3.0
         self.title = myView.canvasID
         self.setColor(blackButton)
         self.setMode(brushButton)
         moveButton.imageView?.contentMode = .scaleAspectFit
         brushButton.imageView?.contentMode = .scaleAspectFit
+        scrollView.minimumZoomScale=0.5;
+        scrollView.maximumZoomScale=6.0;
+        myView.frame = CGRect(x: 0, y: 0, width: 1000, height: 1000)
+        scrollView.contentSize = CGSize(width: 1000, height: 1000)
+        scrollView.delegate=self;
     }
 
     @IBAction func clear(_ sender: UIBarButtonItem) {
@@ -74,6 +81,9 @@ class ViewController: UIViewController, CanvasViewDelegate {
             } while myView.existCanvas(with: canvasID)
         }
         myView.canvasID = canvasID
+        myView.frame = CGRect(x: 0, y: 0, width: 1000, height: 1000)
+        scrollView.contentSize = CGSize(width: 1000, height: 1000)
+
         self.title = canvasID
     }
     
@@ -93,3 +103,23 @@ class ViewController: UIViewController, CanvasViewDelegate {
     }
 }
 
+extension ViewController: UIScrollViewDelegate {
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+        return myView
+    }
+
+//    private func updateMinZoomScaleForSize(size: CGSize) {
+//        let widthScale = size.width / myView.bounds.width
+//        let heightScale = size.height / myView.bounds.height
+//        let minScale = min(widthScale, heightScale)
+//        
+//        scrollView.minimumZoomScale = minScale
+//        scrollView.zoomScale = minScale
+//    }
+//
+//    override func viewDidLayoutSubviews() {
+//        super.viewDidLayoutSubviews()
+//        
+//        updateMinZoomScaleForSize(size: view.bounds.size)
+//    }
+}

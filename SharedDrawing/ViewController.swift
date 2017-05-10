@@ -22,7 +22,6 @@ class ViewController: UIViewController, CanvasViewDelegate {
     @IBOutlet weak var orangeButton: UIButton!
     @IBOutlet weak var yellowButton: UIButton!
     @IBOutlet weak var blackButton: UIButton!
-    @IBOutlet weak var scrollView: UIScrollView!
     private var colorButtons = [UIButton]()
     private var modeButtons = [UIButton]()
 
@@ -40,13 +39,8 @@ class ViewController: UIViewController, CanvasViewDelegate {
         self.setMode(brushButton)
         moveButton.imageView?.contentMode = .scaleAspectFit
         brushButton.imageView?.contentMode = .scaleAspectFit
-        scrollView.minimumZoomScale=0.5;
-        scrollView.maximumZoomScale=6.0;
-        myView.frame = CGRect(x: 0, y: 0, width: 1000, height: 1000)
-        scrollView.contentSize = CGSize(width: 1000, height: 1000)
-        scrollView.delegate=self;
     }
-
+    
     @IBAction func clear(_ sender: UIBarButtonItem) {
         let alert = UIAlertController(title: "Are you sure?", message: "You are about to delete whole drawing", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in self.myView.clear() }))
@@ -70,7 +64,7 @@ class ViewController: UIViewController, CanvasViewDelegate {
             button.isEnabled = (sender==brushButton)
         }
         myView.mode = modeButtonMap[sender] ?? MyView.brush
-        scrollView.isScrollEnabled = (myView.mode === MyView.move)
+        myView.frame = CGRect(x: 0, y: 0, width: 1000, height: 1000)
     }
     
     func setCanvas(id: String) {
@@ -80,9 +74,8 @@ class ViewController: UIViewController, CanvasViewDelegate {
                 canvasID = newCanvasID()
             } while myView.existCanvas(with: canvasID)
         }
-        myView.canvasID = canvasID
         myView.frame = CGRect(x: 0, y: 0, width: 1000, height: 1000)
-        scrollView.contentSize = CGSize(width: 1000, height: 1000)
+        myView.canvasID = canvasID
 
         self.title = canvasID
     }

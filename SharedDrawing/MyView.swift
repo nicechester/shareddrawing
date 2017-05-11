@@ -34,24 +34,6 @@ class MyView: UIView {
             self.wireFB()
         }
     }
-
-    var mode = brush
-    
-    static let brush = DrawingImpl(drawingBegan, drawingMoved, drawingEnded)
-    static let move = DrawingImpl(doNothing, doNothing, doNothing)
-    
-    typealias touchEventHandler = (MyView) -> (Set<UITouch>, UIEvent?) -> ()
-    
-    class DrawingImpl {
-        let began: touchEventHandler;
-        let moved: touchEventHandler;
-        let ended: touchEventHandler;
-        init(_ began: @escaping touchEventHandler, _ moved: @escaping touchEventHandler, _ ended: @escaping touchEventHandler) {
-            self.began = began
-            self.moved = moved
-            self.ended = ended
-        }
-    }
     
     func initCanvas() {
         currentLines = []
@@ -135,12 +117,6 @@ class MyView: UIView {
             UIColor.black.setStroke()
         }
     }
-
-    func doNothing(_ touches: Set<UITouch>, with event: UIEvent?) {}
-
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) { mode.began(self)(touches, event); }
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) { mode.moved(self)(touches, event); }
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) { mode.ended(self)(touches, event); }
 
     func drawingBegan(touches: Set<UITouch>, event: UIEvent?) {
         self.pathID = ref.child(canvasID).child("paths").childByAutoId().key

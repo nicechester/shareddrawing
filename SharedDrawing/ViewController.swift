@@ -9,36 +9,44 @@
 import UIKit
 import Firebase
 
-class ViewController: UIViewController, CanvasViewDelegate {
+class ViewController: UIViewController, CanvasViewDelegate, UIGestureRecognizerDelegate {
     private let letters = Array("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".characters)
     private let len = 5
-    private var modeButtonMap: [UIButton:MyView.DrawingImpl] = [:]
     
-    @IBOutlet weak var brushButton: UIButton!
-    @IBOutlet weak var moveButton: UIButton!
     @IBOutlet weak var myView: MyView!
     @IBOutlet weak var redButton: UIButton!
     @IBOutlet weak var blueButton: UIButton!
     @IBOutlet weak var orangeButton: UIButton!
     @IBOutlet weak var yellowButton: UIButton!
     @IBOutlet weak var blackButton: UIButton!
+    @IBOutlet weak var scrollView: UIScrollView!
+    
     private var colorButtons = [UIButton]()
-    private var modeButtons = [UIButton]()
+    var fingerStrokeRecognizer: StrokeGestureRecognizer!
 
     override func viewDidLoad() {
         super.viewDidLoad()
         colorButtons = [blackButton, redButton, blueButton, orangeButton, yellowButton]
-        modeButtons = [brushButton, moveButton]
-        modeButtonMap = [brushButton:MyView.brush, moveButton:MyView.move]
         myView.ref = FIRDatabase.database().reference()
         myView.myID = UIDevice.current.identifierForVendor?.uuidString ?? "iPAD"
         myView.layer.borderColor = UIColor.black.cgColor
         myView.layer.borderWidth = 3.0
         self.title = myView.canvasID
         self.setColor(blackButton)
-        self.setMode(brushButton)
-        moveButton.imageView?.contentMode = .scaleAspectFit
-        brushButton.imageView?.contentMode = .scaleAspectFit
+        scrollView.maximumZoomScale = 3.0
+        scrollView.minimumZoomScale = 0.5
+        scrollView.pinchGestureRecognizer?.allowedTouchTypes = [UITouchType.direct.rawValue as NSNumber]
+        scrollView.panGestureRecognizer.allowedTouchTypes = [UITouchType.direct.rawValue as NSNumber]
+        scrollView.panGestureRecognizer.minimumNumberOfTouches = 2
+        scrollView.delegate = self
+        let fingerStrokeRecognizer = StrokeGestureRecognizer(target: self, action: nil)
+        fingerStrokeRecognizer.delegate = self
+        fingerStrokeRecognizer.cancelsTouchesInView = false
+        fingerStrokeRecognizer.myView = myView
+        scrollView.addGestureRecognizer(fingerStrokeRecognizer)
+        self.fingerStrokeRecognizer = fingerStrokeRecognizer
+        
+
     }
     
     @IBAction func clear(_ sender: UIBarButtonItem) {
@@ -51,20 +59,11 @@ class ViewController: UIViewController, CanvasViewDelegate {
     @IBAction func setColor(_ sender: UIButton) {
         myView.currentColor = sender.currentTitle!
         colorButtons.forEach { button in
-            button.alpha = (button==sender) ? 1.0 : 0.5
+//            button.alpha = (button==sender) ? 1.0 : 0.5
             button.layer.borderColor = ((button==sender) ? UIColor.black : UIColor.clear).cgColor
+            let image = (button==sender) ? UIImage(named: "paintbrush.png") : nil
+            button.setImage(image, for: .normal)
         }
-    }
-
-    @IBAction func setMode(_ sender: UIButton) {
-        modeButtons.forEach { button in
-            button.layer.borderColor = ((button==sender) ? UIColor.brown : UIColor.clear).cgColor
-        }
-        colorButtons.forEach { button in
-            button.isEnabled = (sender==brushButton)
-        }
-        myView.mode = modeButtonMap[sender] ?? MyView.brush
-        myView.frame = CGRect(x: 0, y: 0, width: 1000, height: 1000)
     }
     
     func setCanvas(id: String) {
@@ -100,19 +99,4 @@ extension ViewController: UIScrollViewDelegate {
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
         return myView
     }
-
-//    private func updateMinZoomScaleForSize(size: CGSize) {
-//        let widthScale = size.width / myView.bounds.width
-//        let heightScale = size.height / myView.bounds.height
-//        let minScale = min(widthScale, heightScale)
-//        
-//        scrollView.minimumZoomScale = minScale
-//        scrollView.zoomScale = minScale
-//    }
-//
-//    override func viewDidLayoutSubviews() {
-//        super.viewDidLayoutSubviews()
-//        
-//        updateMinZoomScaleForSize(size: view.bounds.size)
-//    }
 }

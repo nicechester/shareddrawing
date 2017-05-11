@@ -19,6 +19,7 @@
 		B00F005F1D8B56CB00865C43 /* SharedDrawingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00F005E1D8B56CB00865C43 /* SharedDrawingTests.swift */; };
 		B00F006A1D8B56CB00865C43 /* SharedDrawingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00F00691D8B56CB00865C43 /* SharedDrawingUITests.swift */; };
 		B00F007C1D8B70B300865C43 /* MyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00F007B1D8B70B300865C43 /* MyView.swift */; };
+		B035C7D81EC3D21800312B6B /* StrokeGestureRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B035C7D71EC3D21800312B6B /* StrokeGestureRecognizer.swift */; };
 		B05E489D1D99BD460076BF39 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B05E489C1D99BD460076BF39 /* GoogleService-Info.plist */; };
 		B0DAAF8C1DA1E21900DE52D7 /* hand.png in Resources */ = {isa = PBXBuildFile; fileRef = B0DAAF8B1DA1E21900DE52D7 /* hand.png */; };
 		B0DAAF901DA1E8DF00DE52D7 /* paintbrush.png in Resources */ = {isa = PBXBuildFile; fileRef = B0DAAF8F1DA1E8DF00DE52D7 /* paintbrush.png */; };
@@ -64,6 +65,7 @@
 		B00F00691D8B56CB00865C43 /* SharedDrawingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDrawingUITests.swift; sourceTree = "<group>"; };
 		B00F006B1D8B56CB00865C43 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B00F007B1D8B70B300865C43 /* MyView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MyView.swift; sourceTree = "<group>"; };
+		B035C7D71EC3D21800312B6B /* StrokeGestureRecognizer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StrokeGestureRecognizer.swift; sourceTree = "<group>"; };
 		B05E489C1D99BD460076BF39 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		B0DAAF8B1DA1E21900DE52D7 /* hand.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = hand.png; sourceTree = "<group>"; };
 		B0DAAF8F1DA1E8DF00DE52D7 /* paintbrush.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = paintbrush.png; sourceTree = "<group>"; };
@@ -154,6 +156,7 @@
 				B00F00481D8B56CA00865C43 /* ViewController.swift */,
 				B00F007B1D8B70B300865C43 /* MyView.swift */,
 				B0F9E3301D98863100ECD2A1 /* OpenCanvasIDPopoverViewController.swift */,
+				B035C7D71EC3D21800312B6B /* StrokeGestureRecognizer.swift */,
 				B00F004A1D8B56CA00865C43 /* Main.storyboard */,
 				B00F00501D8B56CA00865C43 /* Assets.xcassets */,
 				B00F00521D8B56CA00865C43 /* LaunchScreen.storyboard */,
@@ -467,6 +470,7 @@
 				B0F9E3311D98863200ECD2A1 /* OpenCanvasIDPopoverViewController.swift in Sources */,
 				B00F00471D8B56CA00865C43 /* AppDelegate.swift in Sources */,
 				B00F004F1D8B56CA00865C43 /* SharedDrawing.xcdatamodeld in Sources */,
+				B035C7D81EC3D21800312B6B /* StrokeGestureRecognizer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -562,7 +566,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -608,7 +612,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";

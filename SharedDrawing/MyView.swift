@@ -34,7 +34,7 @@ class MyView: UIView {
             self.wireFB()
         }
     }
-
+    
     func initCanvas() {
         currentLines = []
         incrImage = nil
@@ -103,6 +103,8 @@ class MyView: UIView {
     
     func set(color colorString: String) {
         switch colorString {
+        case "Black":
+            UIColor.black.setStroke()
         case "Red":
             UIColor.red.setStroke()
         case "Blue":
@@ -116,7 +118,7 @@ class MyView: UIView {
         }
     }
 
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    func drawingBegan(touches: Set<UITouch>, event: UIEvent?) {
         self.pathID = ref.child(canvasID).child("paths").childByAutoId().key
         self.ref.child(canvasID).child("paths").child(pathID).child("color").setValue(currentColor)
         self.ref.child(canvasID).child("paths").child(pathID).child("user").setValue(myID)
@@ -127,7 +129,8 @@ class MyView: UIView {
         self.currentPath.lineWidth = 3.0
     }
     
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+
+    func drawingMoved(touches: Set<UITouch>, event: UIEvent?) {
         addLine(touches)
         setNeedsDisplay()
     }
@@ -147,7 +150,8 @@ class MyView: UIView {
         }
     }
     
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+
+    func drawingEnded(touches: Set<UITouch>, event: UIEvent?) {
         self.drawBitmap(path: self.currentPath, color: self.currentColor)
         pts[0] = currentPath.currentPoint
         ptsCount = 0;

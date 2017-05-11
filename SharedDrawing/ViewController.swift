@@ -9,7 +9,7 @@
 import UIKit
 import Firebase
 
-class ViewController: UIViewController, CanvasViewDelegate {
+class ViewController: UIViewController, CanvasViewDelegate, UIGestureRecognizerDelegate {
     private let letters = Array("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".characters)
     private let len = 5
     
@@ -18,18 +18,37 @@ class ViewController: UIViewController, CanvasViewDelegate {
     @IBOutlet weak var blueButton: UIButton!
     @IBOutlet weak var orangeButton: UIButton!
     @IBOutlet weak var yellowButton: UIButton!
-    var colorButtons = [UIButton]()
+    @IBOutlet weak var blackButton: UIButton!
+    @IBOutlet weak var scrollView: UIScrollView!
     
+    private var colorButtons = [UIButton]()
+    var fingerStrokeRecognizer: StrokeGestureRecognizer!
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        colorButtons = [redButton, blueButton, orangeButton, yellowButton]
+        colorButtons = [blackButton, redButton, blueButton, orangeButton, yellowButton]
         myView.ref = FIRDatabase.database().reference()
         myView.myID = UIDevice.current.identifierForVendor?.uuidString ?? "iPAD"
-//        myView.initAllPaths()
+        myView.layer.borderColor = UIColor.black.cgColor
+        myView.layer.borderWidth = 3.0
         self.title = myView.canvasID
-        self.setColor(blueButton)
-    }
+        self.setColor(blackButton)
+        scrollView.maximumZoomScale = 3.0
+        scrollView.minimumZoomScale = 0.5
+        scrollView.pinchGestureRecognizer?.allowedTouchTypes = [UITouchType.direct.rawValue as NSNumber]
+        scrollView.panGestureRecognizer.allowedTouchTypes = [UITouchType.direct.rawValue as NSNumber]
+        scrollView.panGestureRecognizer.minimumNumberOfTouches = 2
+        scrollView.delegate = self
+        let fingerStrokeRecognizer = StrokeGestureRecognizer(target: self, action: nil)
+        fingerStrokeRecognizer.delegate = self
+        fingerStrokeRecognizer.cancelsTouchesInView = false
+        fingerStrokeRecognizer.myView = myView
+        scrollView.addGestureRecognizer(fingerStrokeRecognizer)
+        self.fingerStrokeRecognizer = fingerStrokeRecognizer
+        
 
+    }
+    
     @IBAction func clear(_ sender: UIBarButtonItem) {
         let alert = UIAlertController(title: "Are you sure?", message: "You are about to delete whole drawing", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in self.myView.clear() }))
@@ -40,10 +59,13 @@ class ViewController: UIViewController, CanvasViewDelegate {
     @IBAction func setColor(_ sender: UIButton) {
         myView.currentColor = sender.currentTitle!
         colorButtons.forEach { button in
-            button.isSelected = button==sender
+//            button.alpha = (button==sender) ? 1.0 : 0.5
+            button.layer.borderColor = ((button==sender) ? UIColor.black : UIColor.clear).cgColor
+            let image = (button==sender) ? UIImage(named: "paintbrush.png") : nil
+            button.setImage(image, for: .normal)
         }
     }
-
+    
     func setCanvas(id: String) {
         var canvasID = id
         if canvasID == "" {
@@ -51,7 +73,9 @@ class ViewController: UIViewController, CanvasViewDelegate {
                 canvasID = newCanvasID()
             } while myView.existCanvas(with: canvasID)
         }
+        myView.frame = CGRect(x: 0, y: 0, width: 1000, height: 1000)
         myView.canvasID = canvasID
+
         self.title = canvasID
     }
     
@@ -71,3 +95,8 @@ class ViewController: UIViewController, CanvasViewDelegate {
     }
 }
 
+extension ViewController: UIScrollViewDelegate {
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+        return myView
+    }
+}

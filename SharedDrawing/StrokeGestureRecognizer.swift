@@ -12,11 +12,20 @@ import UIKit.UIGestureRecognizerSubclass
 class StrokeGestureRecognizer: UIGestureRecognizer {
     var myView: MyView?
     
+
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+        if touches.count > 1 {
+            state = .cancelled
+            return
+        }
         myView?.drawingBegan(touches: touches, event: event)
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+        if touches.count > 1 {
+            state = .cancelled
+            return
+        }
         myView?.drawingMoved(touches: touches, event: event)
     }
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
@@ -24,10 +33,10 @@ class StrokeGestureRecognizer: UIGestureRecognizer {
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
-        
+        myView?.drwingCanceled()
     }
-
+    
     override func reset() {
-        myView?.clear()
+        myView?.drwingCanceled()
     }
 }

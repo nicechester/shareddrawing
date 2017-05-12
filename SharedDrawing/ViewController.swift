@@ -56,6 +56,10 @@ class ViewController: UIViewController, CanvasViewDelegate, UIGestureRecognizerD
         self.present(alert, animated: true, completion: nil)
     }
 
+    @IBAction func undo(_ sender: UIBarButtonItem) {
+        myView.undo()
+    }
+
     @IBAction func setColor(_ sender: UIButton) {
         myView.currentColor = sender.currentTitle!
         colorButtons.forEach { button in

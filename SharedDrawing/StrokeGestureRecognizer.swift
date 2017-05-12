@@ -28,6 +28,6 @@ class StrokeGestureRecognizer: UIGestureRecognizer {
     }
 
     override func reset() {
-        
+        myView?.clear()
     }
 }

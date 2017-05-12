@@ -163,7 +163,7 @@
                                     </segue>
                                 </connections>
                             </barButtonItem>
-                            <barButtonItem systemItem="undo" id="g4Y-Om-Tht">
+                            <barButtonItem image="undoIcon" id="g4Y-Om-Tht" userLabel="undoButton">
                                 <connections>
                                     <action selector="undo:" destination="BYZ-38-t0r" id="Cb2-cg-EIb"/>
                                 </connections>
@@ -266,4 +266,7 @@
             <point key="canvasLocation" x="136.80000000000001" y="792.95352323838085"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="undoIcon" width="25" height="25"/>
+    </resources>
 </document>

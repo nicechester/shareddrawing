@@ -180,7 +180,15 @@ class MyView: UIView {
             }
         }
     }
-    
+
+    func drwingCanceled() {
+        ptsCount = 0;
+        currentPath = UIBezierPath()
+        currentPath.lineWidth = 3.0
+        currentLines = []
+        setNeedsDisplay()
+    }
+
     private func drawBitmap(path: UIBezierPath, color: String) {
         UIGraphicsBeginImageContextWithOptions(self.bounds.size, true, 0.0)
         set(color: color)

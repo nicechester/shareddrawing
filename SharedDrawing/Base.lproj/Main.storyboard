@@ -7,6 +7,7 @@
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="12086"/>
         <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
+        <capability name="Navigation items with more than one left or right bar item" minToolsVersion="7.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -44,7 +45,7 @@
                             <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" translatesAutoresizingMaskIntoConstraints="NO" id="RKX-Jk-j5j">
                                 <rect key="frame" x="0.0" y="295" width="667" height="80"/>
                                 <subviews>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="o3W-6y-V2n" userLabel="Black Button">
+                                    <button opaque="NO" contentMode="scaleAspectFit" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="o3W-6y-V2n" userLabel="Black Button">
                                         <rect key="frame" x="0.0" y="0.0" width="133.5" height="80"/>
                                         <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="18"/>
@@ -63,7 +64,7 @@
                                             <action selector="setColor:" destination="BYZ-38-t0r" eventType="touchUpInside" id="tYP-PC-Jsm"/>
                                         </connections>
                                     </button>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ERY-Hn-l0M">
+                                    <button opaque="NO" contentMode="scaleAspectFit" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ERY-Hn-l0M">
                                         <rect key="frame" x="133.5" y="0.0" width="133.5" height="80"/>
                                         <color key="backgroundColor" red="1" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="18"/>
@@ -82,7 +83,7 @@
                                             <action selector="setColor:" destination="BYZ-38-t0r" eventType="touchUpInside" id="uzS-tY-5se"/>
                                         </connections>
                                     </button>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="GHB-0K-D5P">
+                                    <button opaque="NO" contentMode="scaleAspectFit" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="GHB-0K-D5P">
                                         <rect key="frame" x="267" y="0.0" width="133" height="80"/>
                                         <color key="backgroundColor" red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                         <state key="normal" title="Blue">
@@ -100,7 +101,7 @@
                                             <action selector="setColor:" destination="BYZ-38-t0r" eventType="touchUpInside" id="pj1-bh-rSN"/>
                                         </connections>
                                     </button>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="QBB-py-ncd">
+                                    <button opaque="NO" contentMode="scaleAspectFit" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="QBB-py-ncd">
                                         <rect key="frame" x="400" y="0.0" width="133.5" height="80"/>
                                         <color key="backgroundColor" red="1" green="0.5" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                         <state key="normal" title="Orange">
@@ -118,7 +119,7 @@
                                             <action selector="setColor:" destination="BYZ-38-t0r" eventType="touchUpInside" id="crE-qO-gog"/>
                                         </connections>
                                     </button>
-                                    <button opaque="NO" alpha="0.5" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="U7H-Bc-2ov">
+                                    <button opaque="NO" contentMode="scaleAspectFit" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="U7H-Bc-2ov">
                                         <rect key="frame" x="533.5" y="0.0" width="133.5" height="80"/>
                                         <color key="backgroundColor" red="1" green="1" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                         <state key="normal" title="Yellow">
@@ -154,13 +155,20 @@
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="PfZ-Zu-xKI">
-                        <barButtonItem key="leftBarButtonItem" title="Open" id="uln-Yd-Aq7">
-                            <connections>
-                                <segue destination="eqb-8Y-HAB" kind="popoverPresentation" popoverAnchorBarButtonItem="uln-Yd-Aq7" id="9ii-m2-Nhw">
-                                    <popoverArrowDirection key="popoverArrowDirection" up="YES" down="YES" left="YES" right="YES"/>
-                                </segue>
-                            </connections>
-                        </barButtonItem>
+                        <leftBarButtonItems>
+                            <barButtonItem title="Open" id="uln-Yd-Aq7">
+                                <connections>
+                                    <segue destination="eqb-8Y-HAB" kind="popoverPresentation" popoverAnchorBarButtonItem="uln-Yd-Aq7" id="9ii-m2-Nhw">
+                                        <popoverArrowDirection key="popoverArrowDirection" up="YES" down="YES" left="YES" right="YES"/>
+                                    </segue>
+                                </connections>
+                            </barButtonItem>
+                            <barButtonItem systemItem="undo" id="g4Y-Om-Tht">
+                                <connections>
+                                    <action selector="undo:" destination="BYZ-38-t0r" id="Cb2-cg-EIb"/>
+                                </connections>
+                            </barButtonItem>
+                        </leftBarButtonItems>
                         <barButtonItem key="rightBarButtonItem" systemItem="trash" id="2LU-ze-Ea8">
                             <connections>
                                 <action selector="clear:" destination="BYZ-38-t0r" id="kOu-FD-haA"/>

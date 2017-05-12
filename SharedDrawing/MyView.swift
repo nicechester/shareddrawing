@@ -27,6 +27,7 @@ class MyView: UIView {
     var fbHandles: [UInt] = [0, 0, 0]
     var pts = [CGPoint](repeating: CGPoint(x: 0.0, y: 0.0), count:4)
     var ptsCount = 0
+    var pathStack = Stack<String>()
     
     var ref: FIRDatabaseReference! {
         didSet {
@@ -48,11 +49,12 @@ class MyView: UIView {
                 ref.removeObserver(withHandle: h)
             }
         }
-        fbHandles[0] = ref.child(canvasID).child("paths").observe(.childAdded, with: changePaths)
-        fbHandles[1] = ref.child(canvasID).child("paths").observe(.childChanged, with: changePaths)
-        fbHandles[2] = ref.child(canvasID).child("paths").observe(.childRemoved, with: {_ in
+        fbHandles[0] = ref.child(canvasID).child("paths").observe(.childAdded, with: changePath)
+        fbHandles[1] = ref.child(canvasID).child("paths").observe(.childChanged, with: changePath)
+        fbHandles[2] = ref.child(canvasID).child("paths").observe(.childRemoved, with: { snapshot in
             self.initCanvas()
             self.setNeedsDisplay()
+            self.changeAllPaths()
         })
     }
 
@@ -69,7 +71,17 @@ class MyView: UIView {
         return true
     }
     
-    func changePaths(snapshot: FIRDataSnapshot) {
+    func changeAllPaths() {
+        ref.child(canvasID).child("paths").observeSingleEvent(of: .value, with: { snapshot in
+            if let paths = snapshot.value as? [String:[String:Any]] {
+                paths.forEach{ (_, value) in
+                    self.update(with: value)
+                }
+            }
+        })
+    }
+    
+    func changePath(snapshot: FIRDataSnapshot) {
         if let pathInfo = snapshot.value as? [String:Any], self.userCheck(snapshot, myID) {
             update(with: pathInfo)
         }
@@ -163,15 +175,12 @@ class MyView: UIView {
                 self.ref.child(self.canvasID).child("paths").child(self.pathID).child("points").setValue(lines)
                 DispatchQueue.main.async {
                     self.currentLines = []
+                    self.pathStack.push(self.pathID)
                 }
             }
         }
     }
     
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        
-    }
-
     private func drawBitmap(path: UIBezierPath, color: String) {
         UIGraphicsBeginImageContextWithOptions(self.bounds.size, true, 0.0)
         set(color: color)
@@ -207,4 +216,12 @@ class MyView: UIView {
         return doesExist
     }
 
+    func undo() {
+        if self.pathStack.isNotEmpty() {
+            self.ref.child(self.canvasID).child("paths").child(self.pathStack.pop()).removeValue()
+//            ref.child(canvasID).child("paths").observeSingleEvent(of: .value, with: { snapshot in
+//                self.changePaths(snapshot: snapshot, noUserCheck: true)
+//            })
+        }
+    }
 }

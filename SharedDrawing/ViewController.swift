@@ -12,6 +12,7 @@ import Firebase
 class ViewController: UIViewController, CanvasViewDelegate, UIGestureRecognizerDelegate {
     private let letters = Array("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".characters)
     private let len = 5
+    var canvasID: String? = nil
     
     @IBOutlet weak var myView: MyView!
     @IBOutlet weak var redButton: UIButton!
@@ -31,6 +32,9 @@ class ViewController: UIViewController, CanvasViewDelegate, UIGestureRecognizerD
         myView.myID = UIDevice.current.identifierForVendor?.uuidString ?? "iPAD"
         myView.layer.borderColor = UIColor.black.cgColor
         myView.layer.borderWidth = 3.0
+        if let cid = self.canvasID {
+            myView.canvasID = cid
+        }
         self.title = myView.canvasID
         self.setColor(blackButton)
         scrollView.maximumZoomScale = 3.0

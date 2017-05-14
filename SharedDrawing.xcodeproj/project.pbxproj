@@ -68,6 +68,7 @@
 		B00F007B1D8B70B300865C43 /* MyView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MyView.swift; sourceTree = "<group>"; };
 		B035C7D71EC3D21800312B6B /* StrokeGestureRecognizer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StrokeGestureRecognizer.swift; sourceTree = "<group>"; };
 		B05E489C1D99BD460076BF39 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		B08AC36A1EC7906A0044CA8E /* SharedDrawing.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SharedDrawing.entitlements; sourceTree = "<group>"; };
 		B0D661E21EC4117500479ADE /* Stack.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Stack.swift; sourceTree = "<group>"; };
 		B0DAAF8B1DA1E21900DE52D7 /* hand.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = hand.png; sourceTree = "<group>"; };
 		B0DAAF8F1DA1E8DF00DE52D7 /* paintbrush.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = paintbrush.png; sourceTree = "<group>"; };
@@ -153,6 +154,7 @@
 		B00F00451D8B56CA00865C43 /* SharedDrawing */ = {
 			isa = PBXGroup;
 			children = (
+				B08AC36A1EC7906A0044CA8E /* SharedDrawing.entitlements */,
 				B0DAAF8A1DA1E20A00DE52D7 /* icons */,
 				B00F00461D8B56CA00865C43 /* AppDelegate.swift */,
 				B00F00481D8B56CA00865C43 /* ViewController.swift */,
@@ -275,6 +277,11 @@
 						CreatedOnToolsVersion = 8.0;
 						DevelopmentTeam = K92B539W6W;
 						ProvisioningStyle = Automatic;
+						SystemCapabilities = {
+							com.apple.SafariKeychain = {
+								enabled = 1;
+							};
+						};
 					};
 					B00F00591D8B56CB00865C43 = {
 						CreatedOnToolsVersion = 8.0;
@@ -630,6 +637,7 @@
 			baseConfigurationReference = E8A6FB2BF34A5D973D8889F3 /* Pods-SharedDrawing.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = SharedDrawing/SharedDrawing.entitlements;
 				DEVELOPMENT_TEAM = K92B539W6W;
 				INFOPLIST_FILE = SharedDrawing/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -644,6 +652,7 @@
 			baseConfigurationReference = 76218A3A639AF7045597FE34 /* Pods-SharedDrawing.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = SharedDrawing/SharedDrawing.entitlements;
 				DEVELOPMENT_TEAM = K92B539W6W;
 				INFOPLIST_FILE = SharedDrawing/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";

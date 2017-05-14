@@ -18,5 +18,31 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         FIRApp.configure()
         return true
     }
-}
+
+    func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([Any]?) -> Void) -> Bool {
+        guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+            let url = userActivity.webpageURL,
+            let components = URLComponents(url: url, resolvingAgainstBaseURL: true)
+        else {
+            return false
+        }
+        let canvasID = components.queryItems?.filter({ (item) in item.name == "id" }).first?.value ?? "1"
+        self.presentViewController(canvasID)
+        return true
+    }
+
+    func presentViewController(_ canvasID: String) {
+        
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        
+        let canvasVC = storyboard.instantiateViewController(withIdentifier: "CanvasViewController")
+            as! ViewController
+        canvasVC.canvasID = canvasID
+        
+        let navigationVC = storyboard.instantiateViewController(withIdentifier: "NavigationController")
+            as! UINavigationController
+        navigationVC.modalPresentationStyle = .formSheet
+        
+        navigationVC.pushViewController(canvasVC, animated: true)
+    }}
 

@@ -10,7 +10,7 @@ import UIKit
 import Firebase
 
 class ViewController: UIViewController, CanvasViewDelegate, UIGestureRecognizerDelegate {
-    private let letters = Array("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".characters)
+    private let letters = Array("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
     private let len = 5
     
     @IBOutlet weak var myView: MyView!
@@ -27,7 +27,7 @@ class ViewController: UIViewController, CanvasViewDelegate, UIGestureRecognizerD
     override func viewDidLoad() {
         super.viewDidLoad()
         colorButtons = [blackButton, redButton, blueButton, orangeButton, yellowButton]
-        myView.ref = FIRDatabase.database().reference()
+        myView.ref = Database.database().reference()
         myView.myID = UIDevice.current.identifierForVendor?.uuidString ?? "iPAD"
         myView.layer.borderColor = UIColor.black.cgColor
         myView.layer.borderWidth = 3.0
@@ -35,8 +35,8 @@ class ViewController: UIViewController, CanvasViewDelegate, UIGestureRecognizerD
         self.setColor(blackButton)
         scrollView.maximumZoomScale = 3.0
         scrollView.minimumZoomScale = 0.5
-        scrollView.pinchGestureRecognizer?.allowedTouchTypes = [UITouchType.direct.rawValue as NSNumber]
-        scrollView.panGestureRecognizer.allowedTouchTypes = [UITouchType.direct.rawValue as NSNumber]
+        scrollView.pinchGestureRecognizer?.allowedTouchTypes = [UITouch.TouchType.direct.rawValue as NSNumber]
+        scrollView.panGestureRecognizer.allowedTouchTypes = [UITouch.TouchType.direct.rawValue as NSNumber]
         scrollView.panGestureRecognizer.minimumNumberOfTouches = 2
         scrollView.delegate = self
         let fingerStrokeRecognizer = StrokeGestureRecognizer(target: self, action: nil)

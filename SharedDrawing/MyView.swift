@@ -23,13 +23,13 @@ class MyView: UIView {
     var currentLines: [[CGFloat]]? = []
     var currentPath = UIBezierPath()
     var incrImage: UIImage? = nil
-    var userCheck: (FIRDataSnapshot, String) -> Bool = MyView.alwaysReturnsTrue
+    var userCheck: (DataSnapshot, String) -> Bool = MyView.alwaysReturnsTrue
     var fbHandles: [UInt] = [0, 0, 0]
     var pts = [CGPoint](repeating: CGPoint(x: 0.0, y: 0.0), count:4)
     var ptsCount = 0
     var pathStack = Stack<String>()
     
-    var ref: FIRDatabaseReference! {
+    var ref: DatabaseReference! {
         didSet {
             self.initCanvas()
             self.wireFB()
@@ -58,11 +58,11 @@ class MyView: UIView {
         })
     }
 
-    static func alwaysReturnsTrue(_ snapshot: FIRDataSnapshot, _ currentUserID: String) -> Bool {
+    static func alwaysReturnsTrue(_ snapshot: DataSnapshot, _ currentUserID: String) -> Bool {
         return true
     }
 
-    static func isNotCurrentUser(_ snapshot: FIRDataSnapshot, _ currentUserID: String) -> Bool {
+    static func isNotCurrentUser(_ snapshot: DataSnapshot, _ currentUserID: String) -> Bool {
         if let pathInfo = snapshot.value as? [String:Any] {
             if let user = pathInfo["user"] as? String, currentUserID==user {
                 return false
@@ -81,7 +81,7 @@ class MyView: UIView {
         })
     }
     
-    func changePath(snapshot: FIRDataSnapshot) {
+    func changePath(snapshot: DataSnapshot) {
         if let pathInfo = snapshot.value as? [String:Any], self.userCheck(snapshot, myID) {
             update(with: pathInfo)
         }
@@ -131,7 +131,7 @@ class MyView: UIView {
     }
 
     func drawingBegan(touches: Set<UITouch>, event: UIEvent?) {
-        self.pathID = ref.child(canvasID).child("paths").childByAutoId().key
+        self.pathID = ref.child(canvasID).child("paths").childByAutoId().key!
         self.ref.child(canvasID).child("paths").child(pathID).child("color").setValue(currentColor)
         self.ref.child(canvasID).child("paths").child(pathID).child("user").setValue(myID)
         if let cursor = touches.first?.location(in: self) {

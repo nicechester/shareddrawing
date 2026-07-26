@@ -212,3 +212,8 @@ xcuserdata/
 #
 #tm_build_errors
 
+####
+# Claude Code
+#
+.claude/
+

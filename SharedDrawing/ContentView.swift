@@ -4,12 +4,7 @@ struct ContentView: View {
     let authService: AuthService
 
     var body: some View {
-        let repository = FirebaseCanvasRepository()
-        CanvasView(
-            canvasId: "test-canvas",
-            repository: repository,
-            authService: authService
-        )
+        CanvasIDView()
     }
 }
 

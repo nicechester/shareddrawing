@@ -42,12 +42,15 @@ class FirebaseCanvasRepository: CanvasRepository {
     func addStroke(_ stroke: Stroke, to canvasId: String) async throws {
         let strokeRef = database.child("v2/canvases").child(canvasId).child("strokes").child(stroke.id)
         let strokeData = try encodedStrokeData(stroke)
+        print("📤 Adding stroke \(stroke.id) to canvas \(canvasId): \(strokeData.count) fields")
         try await strokeRef.setValue(strokeData)
+        print("✅ Stroke \(stroke.id) added successfully")
     }
 
     func updateStroke(_ stroke: Stroke, in canvasId: String) async throws {
         let strokeRef = database.child("v2/canvases").child(canvasId).child("strokes").child(stroke.id)
         let strokeData = try encodedStrokeData(stroke)
+        print("📤 Updating stroke \(stroke.id) in canvas \(canvasId): \(stroke.points.count) points")
         try await strokeRef.updateChildValues(strokeData)
     }
 

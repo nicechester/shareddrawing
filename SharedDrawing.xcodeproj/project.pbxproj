@@ -14,7 +14,7 @@
 		3B2E5F822C4D8A0E00123456 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3B2E5F812C4D8A0E00123456 /* Preview Assets.xcassets */; };
 		3B2E5F842C4D8A0E00123456 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3B2E5F832C4D8A0E00123456 /* Assets.xcassets */; };
 		3B2E5FA02C4D8A0E00123456 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B2E5F9F2C4D8A0E00123456 /* AuthService.swift */; };
-		451C7D8E30166BB9001B6350 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 451C7D8D30166BB9001B6350 /* GoogleService-Info.plist */; };
+		454A82333017F7F0002BDC49 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 454A82323017F7F0002BDC49 /* GoogleService-Info.plist */; };
 		5d2c792ef1e8b74b311873ed /* SharedDrawing/FirebaseCanvasRepository.swift in Resources */ = {isa = PBXBuildFile; fileRef = 2f877309c0604eb699f54548 /* SharedDrawing/FirebaseCanvasRepository.swift */; };
 		6a6f326d2f586d82d9ad59f1 /* SharedDrawing/FakeCanvasRepository.swift in Resources */ = {isa = PBXBuildFile; fileRef = f832836a513430da4e7806f6 /* SharedDrawing/FakeCanvasRepository.swift */; };
 		6cc8586e89db89a14e6348aa /* SharedDrawing/StrokePoint.swift in Resources */ = {isa = PBXBuildFile; fileRef = 3e26c55bd10f5e5cc0f7a1ef /* SharedDrawing/StrokePoint.swift */; };
@@ -36,7 +36,7 @@
 		3B2E5F9F2C4D8A0E00123456 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		3e26c55bd10f5e5cc0f7a1ef /* SharedDrawing/StrokePoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDrawing/StrokePoint.swift; sourceTree = "<group>"; };
 		4238650f4565289756e3e00c /* SharedDrawing/CanvasRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDrawing/CanvasRepository.swift; sourceTree = "<group>"; };
-		451C7D8D30166BB9001B6350 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		454A82323017F7F0002BDC49 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		45c4b6243b90e187ffe7bb44 /* SharedDrawing/Stroke.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDrawing/Stroke.swift; sourceTree = "<group>"; };
 		886d36225c7d82f3226d85ed /* SharedDrawing/StrokeCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDrawing/StrokeCaptureView.swift; sourceTree = "<group>"; };
 		cf10c97bb6a4fd438ac6d29c /* SharedDrawing/CanvasViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDrawing/CanvasViewModel.swift; sourceTree = "<group>"; };
@@ -69,13 +69,13 @@
 				3B2E5F7C2C4D8A0E00123456 /* SharedDrawing */,
 				3B2E5F8D2C4D8A0E00123456 /* Products */,
 				451C7D9130167A49001B6350 /* Recovered References */,
+				454A82323017F7F0002BDC49 /* GoogleService-Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
 		3B2E5F7C2C4D8A0E00123456 /* SharedDrawing */ = {
 			isa = PBXGroup;
 			children = (
-				451C7D8D30166BB9001B6350 /* GoogleService-Info.plist */,
 				3B2E5F7D2C4D8A0E00123456 /* SharedDrawingApp.swift */,
 				3B2E5F7F2C4D8A0E00123456 /* ContentView.swift */,
 				3B2E5F9F2C4D8A0E00123456 /* AuthService.swift */,
@@ -188,9 +188,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				454A82333017F7F0002BDC49 /* GoogleService-Info.plist in Resources */,
 				3B2E5F822C4D8A0E00123456 /* Preview Assets.xcassets in Resources */,
 				3B2E5F842C4D8A0E00123456 /* Assets.xcassets in Resources */,
-				451C7D8E30166BB9001B6350 /* GoogleService-Info.plist in Resources */,
 				38afe46303feb419d3e6c032 /* SharedDrawing/CanvasView.swift in Resources */,
 				c6a8fe5d33e8aaf6bd10b62a /* SharedDrawing/CanvasViewModel.swift in Resources */,
 				abb2691eb9341c1d2e3579ed /* SharedDrawing/StrokeCaptureView.swift in Resources */,

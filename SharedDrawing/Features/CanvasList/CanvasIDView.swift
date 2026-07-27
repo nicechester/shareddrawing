@@ -42,7 +42,7 @@ struct CanvasIDView: View {
             .navigationDestination(isPresented: .constant(selectedCanvasID != nil)) {
                 if let canvasID = selectedCanvasID {
                     CanvasView(
-                        canvasId: canvasID,
+                        canvasId: .constant(canvasID),
                         repository: FirebaseCanvasRepository(),
                         authService: AuthService()
                     )

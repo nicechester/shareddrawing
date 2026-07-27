@@ -2,17 +2,9 @@
   "rules": {
     "v2": {
       "canvases": {
-        "{canvasId}": {
-          "meta": {
-            ".read": true,
-            ".write": "auth != null"
-          },
-          "strokes": {
-            "{strokeId}": {
-              ".read": true,
-              ".write": "auth.uid === data.child('userId').val()"
-            }
-          }
+        "$canvasId": {
+          ".read": true,
+          ".write": true
         }
       }
     }

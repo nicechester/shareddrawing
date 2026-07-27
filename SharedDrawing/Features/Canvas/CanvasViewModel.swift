@@ -18,6 +18,13 @@ class CanvasViewModel {
         setupStrokeListener()
     }
 
+    func switchToCanvas(_ newCanvasId: String) {
+        strokeListenerTask?.cancel()
+        canvasId = newCanvasId
+        strokes = []
+        setupStrokeListener()
+    }
+
     private func setupStrokeListener() {
         // Listen to real-time stroke updates via AsyncStream
         strokeListenerTask = Task {

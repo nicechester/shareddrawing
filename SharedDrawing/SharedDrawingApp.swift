@@ -15,6 +15,7 @@ struct SharedDrawingApp: App {
         WindowGroup {
             if isInitialized {
                 ContentView(authService: authService)
+                    .ignoresSafeArea()
             } else {
                 ProgressView("Initializing...")
                     .task {

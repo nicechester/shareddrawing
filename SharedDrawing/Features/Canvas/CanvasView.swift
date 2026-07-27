@@ -5,19 +5,21 @@ struct CanvasView: View {
     @State private var currentStroke: Stroke?
     @State private var isDrawing = false
     @State private var lastUpdateTime: Date?
+    @State private var showCanvasIDSheet = false
+    @State private var showClearConfirmation = false
 
-    let canvasId: String
+    @Binding var canvasId: String
     let repository: CanvasRepository
     let authService: AuthService
 
     private let throttleInterval: TimeInterval = 0.05  // ~50ms throttle for live updates
 
-    init(canvasId: String, repository: CanvasRepository, authService: AuthService) {
-        self.canvasId = canvasId
+    init(canvasId: Binding<String>, repository: CanvasRepository, authService: AuthService) {
+        self._canvasId = canvasId
         self.repository = repository
         self.authService = authService
         self._viewModel = State(initialValue: CanvasViewModel(
-            canvasId: canvasId,
+            canvasId: canvasId.wrappedValue,
             repository: repository,
             authService: authService
         ))
@@ -25,48 +27,91 @@ struct CanvasView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // Canvas ID header - placed safely below the status bar
+            HStack(spacing: 8) {
+                Button(action: {
+                    showCanvasIDSheet = true
+                }) {
+                    HStack {
+                        Text("Canvas ID: '\(canvasId)'")
+                            .font(.system(size: 18))
+                            .monospaced()
+                        Spacer()
+                    }
+                    .contentShape(Rectangle())
+                }
+
+                Button(action: {
+                    showClearConfirmation = true
+                }) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 16))
+                        .foregroundColor(.red)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                Color(.systemGray6)
+                    .ignoresSafeArea(edges: .top)
+            )
+            .sheet(isPresented: $showCanvasIDSheet) {
+                ChangeCanvasIDSheet(
+                    canvasId: $canvasId,
+                    isPresented: $showCanvasIDSheet
+                )
+            }
+            .alert("Clear All Strokes?", isPresented: $showClearConfirmation) {
+                Button("Cancel", role: .cancel) { }
+                Button("Clear", role: .destructive) {
+                    clearAllStrokes()
+                }
+            } message: {
+                Text("This will permanently delete all drawings on this canvas. This action cannot be undone.")
+            }
+            // Color Palette
             ColorPalettePicker(selectedColor: $viewModel.currentColor)
                 .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.vertical, 6)
+                .background(Color.white)
 
+            // Drawing Canvas
             ZStack {
                 Canvas { context, _ in
-                    // Render all completed strokes
                     for stroke in viewModel.strokes {
                         renderStroke(stroke, in: &context)
                     }
 
-                    // Render current in-progress stroke
                     if let current = currentStroke {
                         renderStroke(current, in: &context)
                     }
                 }
                 .background(Color.white)
 
-                // Overlay touch capture
                 StrokeCaptureView(
                     onPointsCapture: { points in
                         guard !points.isEmpty else { return }
 
                         if !isDrawing {
-                            // Start new stroke with first point
                             isDrawing = true
                             currentStroke = viewModel.startStroke(at: points.first ?? .zero)
                         }
 
-                        // Add captured points to current stroke
                         if var stroke = currentStroke {
                             for point in points {
                                 viewModel.addStrokePoint(point, to: &stroke)
                             }
                             currentStroke = stroke
 
-                            // Throttled live update to Firebase (~50ms)
                             let now = Date()
                             if lastUpdateTime == nil || now.timeIntervalSince(lastUpdateTime ?? now) >= throttleInterval {
                                 lastUpdateTime = now
                                 Task {
-                                    try? await viewModel.repository.updateStroke(stroke, in: canvasId)
+                                    do {
+                                        try await viewModel.repository.updateStroke(stroke, in: canvasId)
+                                    } catch {
+                                        print("❌ Error updating stroke: \(error)")
+                                    }
                                 }
                             }
                         }
@@ -81,7 +126,25 @@ struct CanvasView: View {
                     }
                 )
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .padding(.vertical, 48)
+        .onChange(of: canvasId) { _, newCanvasId in
+            currentStroke = nil
+            isDrawing = false
+            viewModel.switchToCanvas(newCanvasId)
+        }
+    }
+    
+    private func clearAllStrokes() {
+        Task {
+            for stroke in viewModel.strokes {
+                do {
+                    try await repository.removeStroke(id: stroke.id, from: canvasId)
+                } catch {
+                    print("❌ Error clearing stroke: \(error)")
+                }
+            }
+            viewModel.strokes = []
         }
     }
 
@@ -102,6 +165,57 @@ struct CanvasView: View {
             with: .color(color),
             lineWidth: stroke.width
         )
+    }
+}
+
+struct ChangeCanvasIDSheet: View {
+    @Binding var canvasId: String
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                Text("Canvas ID")
+                    .font(.headline)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Canvas ID")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    TextField("Canvas ID", text: $canvasId)
+                        .textFieldStyle(.roundedBorder)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                }
+
+                HStack(spacing: 12) {
+                    Button(action: {
+                        canvasId = generateRandomID()
+                    }) {
+                        Text("Generate")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Text("Open")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(canvasId.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+
+                Spacer()
+            }
+            .padding()
+        }
+    }
+
+    private func generateRandomID() -> String {
+        let characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        return String((0..<5).map { _ in characters.randomElement()! })
     }
 }
 

@@ -24,57 +24,64 @@ struct CanvasView: View {
     }
 
     var body: some View {
-        ZStack {
-            Canvas { context, _ in
-                // Render all completed strokes
-                for stroke in viewModel.strokes {
-                    renderStroke(stroke, in: &context)
-                }
+        VStack(spacing: 0) {
+            ColorPalettePicker(selectedColor: $viewModel.currentColor)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
 
-                // Render current in-progress stroke
-                if let current = currentStroke {
-                    renderStroke(current, in: &context)
-                }
-            }
-            .background(Color.white)
-
-            // Overlay touch capture
-            StrokeCaptureView(
-                onPointsCapture: { points in
-                    guard !points.isEmpty else { return }
-
-                    if !isDrawing {
-                        // Start new stroke with first point
-                        isDrawing = true
-                        currentStroke = viewModel.startStroke(at: points.first ?? .zero)
+            ZStack {
+                Canvas { context, _ in
+                    // Render all completed strokes
+                    for stroke in viewModel.strokes {
+                        renderStroke(stroke, in: &context)
                     }
 
-                    // Add captured points to current stroke
-                    if var stroke = currentStroke {
-                        for point in points {
-                            viewModel.addStrokePoint(point, to: &stroke)
-                        }
-                        currentStroke = stroke
+                    // Render current in-progress stroke
+                    if let current = currentStroke {
+                        renderStroke(current, in: &context)
+                    }
+                }
+                .background(Color.white)
 
-                        // Throttled live update to Firebase (~50ms)
-                        let now = Date()
-                        if lastUpdateTime == nil || now.timeIntervalSince(lastUpdateTime ?? now) >= throttleInterval {
-                            lastUpdateTime = now
-                            Task {
-                                try? await viewModel.repository.updateStroke(stroke, in: canvasId)
+                // Overlay touch capture
+                StrokeCaptureView(
+                    onPointsCapture: { points in
+                        guard !points.isEmpty else { return }
+
+                        if !isDrawing {
+                            // Start new stroke with first point
+                            isDrawing = true
+                            currentStroke = viewModel.startStroke(at: points.first ?? .zero)
+                        }
+
+                        // Add captured points to current stroke
+                        if var stroke = currentStroke {
+                            for point in points {
+                                viewModel.addStrokePoint(point, to: &stroke)
+                            }
+                            currentStroke = stroke
+
+                            // Throttled live update to Firebase (~50ms)
+                            let now = Date()
+                            if lastUpdateTime == nil || now.timeIntervalSince(lastUpdateTime ?? now) >= throttleInterval {
+                                lastUpdateTime = now
+                                Task {
+                                    try? await viewModel.repository.updateStroke(stroke, in: canvasId)
+                                }
                             }
                         }
+                    },
+                    onStrokeEnded: {
+                        guard let stroke = currentStroke else { return }
+                        isDrawing = false
+                        Task {
+                            await viewModel.submitStroke(stroke)
+                            currentStroke = nil
+                        }
                     }
-                },
-                onStrokeEnded: {
-                    guard let stroke = currentStroke else { return }
-                    isDrawing = false
-                    Task {
-                        await viewModel.submitStroke(stroke)
-                        currentStroke = nil
-                    }
-                }
-            )
+                )
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 

@@ -12,12 +12,12 @@ struct ColorPalettePicker: View {
     ]
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 8) {
             ForEach(colors, id: \.hex) { color in
                 Button(action: { selectedColor = color.hex }) {
                     Circle()
                         .fill(Color(hex: color.hex))
-                        .frame(width: 44, height: 44)
+                        .frame(width: 24, height: 24)
                         .overlay(
                             Circle()
                                 .stroke(Color.white, lineWidth: selectedColor == color.hex ? 3 : 0)
@@ -27,7 +27,8 @@ struct ColorPalettePicker: View {
             }
             Spacer()
         }
-        .padding()
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .background(Color(.systemGray6))
         .cornerRadius(8)
     }

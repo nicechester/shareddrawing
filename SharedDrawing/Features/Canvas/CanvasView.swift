@@ -26,6 +26,8 @@ struct CanvasView: View {
     var body: some View {
         VStack(spacing: 0) {
             ColorPalettePicker(selectedColor: $viewModel.currentColor)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
 
             ZStack {
                 Canvas { context, _ in
@@ -79,6 +81,7 @@ struct CanvasView: View {
                     }
                 )
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 

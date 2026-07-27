@@ -69,11 +69,24 @@ struct CanvasView: View {
             } message: {
                 Text("This will permanently delete all drawings on this canvas. This action cannot be undone.")
             }
-            // Color Palette
-            ColorPalettePicker(selectedColor: $viewModel.currentColor)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Color.white)
+
+            // Undo button + Color palette
+            HStack(spacing: 12) {
+                Button(action: {
+                    Task { await viewModel.undo() }
+                }) {
+                    Image(systemName: "arrow.uturn.backward")
+                        .font(.system(size: 16))
+                }
+                .disabled(!viewModel.canUndo)
+
+                Spacer()
+
+                ColorPalettePicker(selectedColor: $viewModel.currentColor)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.white)
 
             // Drawing Canvas
             ZStack {

@@ -6,10 +6,12 @@ class CanvasViewModel {
     var strokes: [Stroke] = []
     var currentColor: String = "#000000"  // Black by default
     var canvasId: String
+    var canUndo: Bool { !undoStack.isEmpty }
 
     let repository: CanvasRepository
     private let authService: AuthService
     private var strokeListenerTask: Task<Void, Never>?
+    private var undoStack = Stack<Stroke>()
 
     init(canvasId: String, repository: CanvasRepository, authService: AuthService) {
         self.canvasId = canvasId
@@ -72,6 +74,24 @@ class CanvasViewModel {
             try await repository.addStroke(finalStroke, to: canvasId)
         } catch {
             print("Error submitting stroke: \(error)")
+        }
+    }
+
+    func undo() async {
+        guard let stroke = undoStack.pop() else { return }
+        do {
+            try await repository.addStroke(stroke, to: canvasId)
+        } catch {
+            print("❌ Error undoing stroke: \(error)")
+        }
+    }
+
+    func deleteStroke(_ stroke: Stroke) async {
+        undoStack.push(stroke)
+        do {
+            try await repository.removeStroke(id: stroke.id, from: canvasId)
+        } catch {
+            print("❌ Error deleting stroke: \(error)")
         }
     }
 

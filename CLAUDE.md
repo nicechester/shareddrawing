@@ -142,7 +142,7 @@ SharedDrawingUITests/
 - [#54](https://github.com/nicechester/shareddrawing/issues/54): StrokeCaptureView (touch input)
 - [#55](https://github.com/nicechester/shareddrawing/issues/55): CanvasView + CanvasViewModel
 - [#56](https://github.com/nicechester/shareddrawing/issues/56): Color palette (5 fixed colors)
-- [#57](https://github.com/nicechester/shareddrawing/issues/57): Canvas join/create (ID-based)
+- [#57](https://github.com/nicechester/shareddrawing/issues/57): Canvas join/create (short random ID)
 - [#58](https://github.com/nicechester/shareddrawing/issues/58): Local undo stack
 - [#59](https://github.com/nicechester/shareddrawing/issues/59): End-to-end sync test (two simulators)
 
@@ -151,11 +151,11 @@ SharedDrawingUITests/
 ### Phase 2: Feature Expansion
 **Issues**: [#60](https://github.com/nicechester/shareddrawing/issues/60) (epic)
 - Firestore-backed "my canvases" list (cross-device sync)
-- Share sheet + QR code invite
+- URL-based canvas sharing (e.g., `shareddrawing.app/abc12`) with web redirect (Universal Links for mobile)
 - Background image import
 - Drawing export to image/PDF
 - Pannable/zoomable canvas
-- Presence indicators
+- Presence indicators (show active users drawing)
 - Redo stack, pressure-sensitive width, custom color picker
 
 **Blocked by**: Phase 1 MVP working end-to-end

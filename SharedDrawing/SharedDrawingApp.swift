@@ -14,7 +14,7 @@ struct SharedDrawingApp: App {
     var body: some Scene {
         WindowGroup {
             if isInitialized {
-                ContentView().environment(authService)
+                ContentView(authService: authService)
             } else {
                 ProgressView("Initializing...")
                     .task {

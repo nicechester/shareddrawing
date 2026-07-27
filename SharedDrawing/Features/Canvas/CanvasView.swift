@@ -25,7 +25,7 @@ struct CanvasView: View {
 
     var body: some View {
         ZStack {
-            Canvas { context in
+            Canvas { context, _ in
                 // Render all completed strokes
                 for stroke in viewModel.strokes {
                     renderStroke(stroke, in: &context)

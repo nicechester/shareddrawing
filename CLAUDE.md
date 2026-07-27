@@ -198,6 +198,14 @@ SharedDrawingUITests/
 - Atomic commits grouped by logical change, not by file
 - PR description references the GitHub issue number
 
+### GitHub Access
+**CRITICAL**: Use GitHub MCP tools exclusively, never use `gh` CLI.
+- For creating/updating PRs, use `mcp__github__create_pull_request` / `mcp__github__update_pull_request`
+- For file operations, use `mcp__github__create_or_update_file` / `mcp__github__get_file_contents`
+- For issues, use `mcp__github__issue_read` / `mcp__github__issue_write`
+- For code search, use `mcp__github__search_code` / `mcp__github__search_issues`
+- Reason: The `gh` CLI is authenticated to a work account; personal account is via MCP tokens only
+
 ---
 
 ## Edge Cases to Watch

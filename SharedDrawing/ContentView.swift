@@ -1,28 +1,19 @@
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
-        VStack(spacing: 20) {
-            Text("SharedDrawing")
-                .font(.largeTitle)
-                .fontWeight(.bold)
+    let authService: AuthService
 
-            // Canvas placeholder
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray.opacity(0.3), lineWidth: 2)
-                .background(Color.white)
-                .overlay(
-                    Text("Canvas Area")
-                        .foregroundColor(.gray)
-                )
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: 300)
-                .padding()
-        }
-        .padding()
+    var body: some View {
+        let repository = FirebaseCanvasRepository()
+        CanvasView(
+            canvasId: "test-canvas",
+            repository: repository,
+            authService: authService
+        )
     }
 }
 
 #Preview {
-    ContentView()
+    let mockAuth = AuthService()
+    ContentView(authService: mockAuth)
 }

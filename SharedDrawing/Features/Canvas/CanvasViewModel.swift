@@ -7,7 +7,7 @@ class CanvasViewModel {
     var currentColor: String = "#000000"  // Black by default
     var canvasId: String
 
-    private let repository: CanvasRepository
+    let repository: CanvasRepository
     private let authService: AuthService
     private var strokeListenerTask: Task<Void, Never>?
 

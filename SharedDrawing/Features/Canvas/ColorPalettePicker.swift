@@ -17,7 +17,7 @@ struct ColorPalettePicker: View {
                 Button(action: { selectedColor = color.hex }) {
                     Circle()
                         .fill(Color(hex: color.hex))
-                        .frame(width: 32, height: 32)
+                        .frame(width: 24, height: 24)
                         .overlay(
                             Circle()
                                 .stroke(Color.white, lineWidth: selectedColor == color.hex ? 3 : 0)

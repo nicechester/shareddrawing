@@ -103,9 +103,11 @@ struct CanvasView: View {
 
                 StrokeCaptureView(
                     onPointsCapture: { points in
+                        print("📍 Touch: \(points.count) points, isDrawing=\(isDrawing)")
                         guard !points.isEmpty else { return }
 
                         if !isDrawing {
+                            print("🎨 Starting new stroke")
                             isDrawing = true
                             currentStroke = viewModel.startStroke(at: points.first ?? .zero)
                         }
@@ -130,11 +132,14 @@ struct CanvasView: View {
                         }
                     },
                     onStrokeEnded: {
+                        print("✋ Stroke ended, submitting \(currentStroke?.points.count ?? 0) points")
                         guard let stroke = currentStroke else { return }
+                        let endedStroke = stroke
+                        currentStroke = nil
                         isDrawing = false
                         Task {
-                            await viewModel.submitStroke(stroke)
-                            currentStroke = nil
+                            await viewModel.submitStroke(endedStroke)
+                            print("✅ Stroke submitted")
                         }
                     }
                 )
@@ -142,6 +147,7 @@ struct CanvasView: View {
         }
         .padding(.vertical, 48)
         .onChange(of: canvasId) { _, newCanvasId in
+            guard !newCanvasId.trimmingCharacters(in: .whitespaces).isEmpty else { return }
             currentStroke = nil
             isDrawing = false
             viewModel.switchToCanvas(newCanvasId)
@@ -150,6 +156,7 @@ struct CanvasView: View {
     
     private func clearAllStrokes() {
         Task {
+            viewModel.recordClear(viewModel.strokes)
             for stroke in viewModel.strokes {
                 do {
                     try await repository.removeStroke(id: stroke.id, from: canvasId)
@@ -184,6 +191,7 @@ struct CanvasView: View {
 struct ChangeCanvasIDSheet: View {
     @Binding var canvasId: String
     @Binding var isPresented: Bool
+    @State private var editingID = ""
 
     var body: some View {
         NavigationStack {
@@ -195,7 +203,7 @@ struct ChangeCanvasIDSheet: View {
                     Text("Canvas ID")
                         .font(.caption)
                         .foregroundColor(.gray)
-                    TextField("Canvas ID", text: $canvasId)
+                    TextField("Canvas ID", text: $editingID)
                         .textFieldStyle(.roundedBorder)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
@@ -203,7 +211,7 @@ struct ChangeCanvasIDSheet: View {
 
                 HStack(spacing: 12) {
                     Button(action: {
-                        canvasId = generateRandomID()
+                        editingID = generateRandomID()
                     }) {
                         Text("Generate")
                             .frame(maxWidth: .infinity)
@@ -211,18 +219,24 @@ struct ChangeCanvasIDSheet: View {
                     .buttonStyle(.borderedProminent)
 
                     Button(action: {
-                        isPresented = false
+                        let trimmed = editingID.trimmingCharacters(in: .whitespaces)
+                        if !trimmed.isEmpty {
+                            canvasId = trimmed
+                            isPresented = false
+                        }
                     }) {
                         Text("Open")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
-                    .disabled(canvasId.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
 
                 Spacer()
             }
             .padding()
+            .onAppear {
+                editingID = canvasId
+            }
         }
     }
 

@@ -48,6 +48,7 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		451C7D9A3017A33E001B6350 /* Core */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Core; sourceTree = "<group>"; };
 		451C7D9F3017A33E001B6350 /* Features */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Features; sourceTree = "<group>"; };
+		454A829B301810AF002BDC49 /* Shared */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Shared; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,6 +84,7 @@
 				3B2E5F8E2C4D8A0E00123456 /* Preview Content */,
 				451C7D9A3017A33E001B6350 /* Core */,
 				451C7D9F3017A33E001B6350 /* Features */,
+				454A829B301810AF002BDC49 /* Shared */,
 			);
 			path = SharedDrawing;
 			sourceTree = "<group>";
@@ -137,6 +139,7 @@
 			fileSystemSynchronizedGroups = (
 				451C7D9A3017A33E001B6350 /* Core */,
 				451C7D9F3017A33E001B6350 /* Features */,
+				454A829B301810AF002BDC49 /* Shared */,
 			);
 			name = SharedDrawing;
 			packageProductDependencies = (

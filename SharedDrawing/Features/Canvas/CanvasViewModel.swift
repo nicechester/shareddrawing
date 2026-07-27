@@ -6,12 +6,13 @@ class CanvasViewModel {
     var strokes: [Stroke] = []
     var currentColor: String = "#000000"  // Black by default
     var canvasId: String
-    var canUndo: Bool { !undoStack.isEmpty }
+    var canUndo: Bool { !undoStack.isEmpty || lastClearedStrokes != nil }
 
     let repository: CanvasRepository
     private let authService: AuthService
     private var strokeListenerTask: Task<Void, Never>?
     private var undoStack = Stack<Stroke>()
+    private var lastClearedStrokes: [Stroke]?
 
     init(canvasId: String, repository: CanvasRepository, authService: AuthService) {
         self.canvasId = canvasId
@@ -72,27 +73,33 @@ class CanvasViewModel {
         finalStroke.isComplete = true
         do {
             try await repository.addStroke(finalStroke, to: canvasId)
+            undoStack.push(finalStroke)
         } catch {
             print("Error submitting stroke: \(error)")
         }
     }
 
     func undo() async {
-        guard let stroke = undoStack.pop() else { return }
-        do {
-            try await repository.addStroke(stroke, to: canvasId)
-        } catch {
-            print("❌ Error undoing stroke: \(error)")
+        if let clearedStrokes = lastClearedStrokes {
+            lastClearedStrokes = nil
+            for stroke in clearedStrokes {
+                do {
+                    try await repository.addStroke(stroke, to: canvasId)
+                } catch {
+                    print("❌ Error undoing clear: \(error)")
+                }
+            }
+        } else if let stroke = undoStack.pop() {
+            do {
+                try await repository.removeStroke(id: stroke.id, from: canvasId)
+            } catch {
+                print("❌ Error undoing stroke: \(error)")
+            }
         }
     }
 
-    func deleteStroke(_ stroke: Stroke) async {
-        undoStack.push(stroke)
-        do {
-            try await repository.removeStroke(id: stroke.id, from: canvasId)
-        } catch {
-            print("❌ Error deleting stroke: \(error)")
-        }
+    func recordClear(_ strokes: [Stroke]) {
+        lastClearedStrokes = strokes
     }
 
     deinit {

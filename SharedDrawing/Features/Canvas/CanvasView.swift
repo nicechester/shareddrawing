@@ -6,6 +6,7 @@ struct CanvasView: View {
     @State private var isDrawing = false
     @State private var lastUpdateTime: Date?
     @State private var showCanvasIDSheet = false
+    @State private var showClearConfirmation = false
 
     @Binding var canvasId: String
     let repository: CanvasRepository
@@ -27,28 +28,46 @@ struct CanvasView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Canvas ID header - placed safely below the status bar
-            Button(action: {
-                showCanvasIDSheet = true
-            }) {
-                HStack {
-                    Text("Canvas ID: '\(canvasId)'")
-                        .font(.system(size: 18))
-                        .monospaced()
-                    Spacer()
+            HStack(spacing: 8) {
+                Button(action: {
+                    showCanvasIDSheet = true
+                }) {
+                    HStack {
+                        Text("Canvas ID: '\(canvasId)'")
+                            .font(.system(size: 18))
+                            .monospaced()
+                        Spacer()
+                    }
+                    .contentShape(Rectangle())
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(
-                    Color(.systemGray6)
-                        .ignoresSafeArea(edges: .top) // Fills status bar area above the button with gray
-                )
-                .contentShape(Rectangle())
+
+                Button(action: {
+                    showClearConfirmation = true
+                }) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 16))
+                        .foregroundColor(.red)
+                }
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                Color(.systemGray6)
+                    .ignoresSafeArea(edges: .top)
+            )
             .sheet(isPresented: $showCanvasIDSheet) {
                 ChangeCanvasIDSheet(
                     canvasId: $canvasId,
                     isPresented: $showCanvasIDSheet
                 )
+            }
+            .alert("Clear All Strokes?", isPresented: $showClearConfirmation) {
+                Button("Cancel", role: .cancel) { }
+                Button("Clear", role: .destructive) {
+                    clearAllStrokes()
+                }
+            } message: {
+                Text("This will permanently delete all drawings on this canvas. This action cannot be undone.")
             }
             // Color Palette
             ColorPalettePicker(selectedColor: $viewModel.currentColor)
@@ -116,6 +135,19 @@ struct CanvasView: View {
         }
     }
     
+    private func clearAllStrokes() {
+        Task {
+            for stroke in viewModel.strokes {
+                do {
+                    try await repository.removeStroke(id: stroke.id, from: canvasId)
+                } catch {
+                    print("❌ Error clearing stroke: \(error)")
+                }
+            }
+            viewModel.strokes = []
+        }
+    }
+
     private func renderStroke(_ stroke: Stroke, in context: inout GraphicsContext) {
         guard stroke.points.count > 1 else { return }
 

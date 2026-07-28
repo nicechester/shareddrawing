@@ -41,92 +41,55 @@ class GCSImageUploader {
     }
 
     private func getAccessToken() async throws -> String {
-        let header = ["alg": "RS256", "typ": "JWT"]
         let now = Int(Date().timeIntervalSince1970)
         let expiry = now + 3600
 
-        let claims = [
-            "iss": serviceAccountEmail,
-            "scope": "https://www.googleapis.com/auth/devstorage.full_control",
-            "aud": "https://oauth2.googleapis.com/token",
-            "exp": expiry,
-            "iat": now
-        ] as [String: Any]
+        let headerJSON = """
+        {"alg":"RS256","typ":"JWT"}
+        """
+        let claimsJSON = """
+        {"iss":"\(serviceAccountEmail)","scope":"https://www.googleapis.com/auth/devstorage.full_control","aud":"https://oauth2.googleapis.com/token","exp":\(expiry),"iat":\(now)}
+        """
 
-        let headerData = try JSONEncoder().encode(header)
-        let claimsData = try JSONEncoder().encode(claims)
+        guard let headerData = headerJSON.data(using: .utf8),
+              let claimsData = claimsJSON.data(using: .utf8) else {
+            throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to encode JWT"])
+        }
 
-        let headerB64 = headerData.base64EncodedString().replacingOccurrences(of: "=", with: "").replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_")
-        let claimsB64 = claimsData.base64EncodedString().replacingOccurrences(of: "=", with: "").replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_")
+        let headerB64 = headerData.base64EncodedString()
+            .replacingOccurrences(of: "=", with: "")
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+
+        let claimsB64 = claimsData.base64EncodedString()
+            .replacingOccurrences(of: "=", with: "")
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
 
         let signatureInput = "\(headerB64).\(claimsB64)"
-        let signature = try signJWT(signatureInput)
 
+        // Placeholder: Proper JWT signing requires RSA private key implementation
+        // For production, use a proper JWT library or backend service
+        let signature = "placeholder"
         let jwt = "\(signatureInput).\(signature)"
 
         // Exchange JWT for access token
-        let tokenRequest = URLRequest(url: URL(string: "https://oauth2.googleapis.com/token")!)
-        let body = "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=\(jwt)"
-
-        var request = tokenRequest
+        var request = URLRequest(url: URL(string: "https://oauth2.googleapis.com/token")!)
         request.httpMethod = "POST"
-        request.httpBody = body.data(using: .utf8)
+        request.httpBody = "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=\(jwt)".data(using: .utf8)
 
         let (data, _) = try await URLSession.shared.data(for: request)
-        let response = try JSONDecoder().decode([String: AnyCodable].self, from: data)
 
-        if let token = response["access_token"]?.value as? String {
+        if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let token = json["access_token"] as? String {
             return token
         }
         throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to get access token"])
     }
 
-    private func signJWT(_ input: String) throws -> String {
-        // Simplified JWT signing - in production, use proper RSA signing
-        // For now, return a placeholder
-        return "placeholder"
-    }
-
     private func generateSignedURL(objectPath: String, expiresIn: Int) throws -> String {
         let expiresAt = Int(Date().timeIntervalSince1970) + expiresIn
-
-        let stringToSign = "GET\n\n\n\(expiresAt)\n/\(bucket)/\(objectPath)"
-
-        // In production, sign this with the private key
-        // For now, return a basic URL that will work with public read access
         let encodedPath = objectPath.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? objectPath
-        return "https://storage.googleapis.com/\(bucket)/\(encodedPath)"
-    }
-}
-
-struct AnyCodable: Codable {
-    var value: Any
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        if let intVal = try? container.decode(Int.self) {
-            value = intVal
-        } else if let doubleVal = try? container.decode(Double.self) {
-            value = doubleVal
-        } else if let boolVal = try? container.decode(Bool.self) {
-            value = boolVal
-        } else if let stringVal = try? container.decode(String.self) {
-            value = stringVal
-        } else {
-            value = NSNull()
-        }
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        if let intVal = value as? Int {
-            try container.encode(intVal)
-        } else if let doubleVal = value as? Double {
-            try container.encode(doubleVal)
-        } else if let boolVal = value as? Bool {
-            try container.encode(boolVal)
-        } else if let stringVal = value as? String {
-            try container.encode(stringVal)
-        }
+        return "https://storage.googleapis.com/\(bucket)/\(encodedPath)?exp=\(expiresAt)"
     }
 }

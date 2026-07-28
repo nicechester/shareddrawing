@@ -12,23 +12,20 @@ struct ContentView: View {
             repository: FirebaseCanvasRepository(),
             authService: authService
         )
-        .onChange(of: deepLinkCanvasId) { _, newId in
-            if let newId = newId {
-                currentCanvasID = newId
-                deepLinkCanvasId = nil
-            }
+        .onAppear {
+                    consumeDeepLink()
+        }
+        .onChange(of: deepLinkCanvasId) { _, _ in
+            consumeDeepLink()
         }
     }
 
-    private func generateRandomID() -> String {
-        let characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        return String((0..<5).map { _ in characters.randomElement()! })
+    private func consumeDeepLink() {
+        if let newId = deepLinkCanvasId {
+            currentCanvasID = newId
+            deepLinkCanvasId = nil
+        }
     }
-}
-
-#Preview {
-    let auth = AuthService()
-    ContentView(deepLinkCanvasId: .constant(nil), authService: auth)
 }
 
 #Preview {

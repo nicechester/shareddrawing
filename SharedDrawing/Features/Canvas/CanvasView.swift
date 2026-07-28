@@ -27,8 +27,16 @@ struct CanvasView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Canvas ID header - placed safely below the status bar
+            // Canvas ID header with Undo/Share buttons
             HStack(spacing: 8) {
+                Button(action: {
+                    Task { await viewModel.undo() }
+                }) {
+                    Image(systemName: "arrow.uturn.backward")
+                        .font(.system(size: 14))
+                }
+                .disabled(!viewModel.canUndo)
+
                 Button(action: {
                     showCanvasIDSheet = true
                 }) {
@@ -41,11 +49,20 @@ struct CanvasView: View {
                     .contentShape(Rectangle())
                 }
 
+                ShareLink(
+                    item: URL(string: "https://shared-drawing.web.app/?id=\(canvasId)") ?? URL(fileURLWithPath: ""),
+                    subject: Text("Join my canvas"),
+                    message: Text("Draw together on canvas \(canvasId)")
+                ) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 14))
+                }
+
                 Button(action: {
                     showClearConfirmation = true
                 }) {
                     Image(systemName: "trash")
-                        .font(.system(size: 16))
+                        .font(.system(size: 14))
                         .foregroundColor(.red)
                 }
             }
@@ -70,88 +87,66 @@ struct CanvasView: View {
                 Text("This will permanently delete all drawings on this canvas. This action cannot be undone.")
             }
 
-            // Undo button + Color palette + Share
-            HStack(spacing: 8) {
-                Button(action: {
-                    Task { await viewModel.undo() }
-                }) {
-                    Image(systemName: "arrow.uturn.backward")
-                        .font(.system(size: 14))
-                }
-                .disabled(!viewModel.canUndo)
-
+            // Color palette on left, canvas on right
+            HStack(spacing: 0) {
                 ColorPalettePicker(selectedColor: $viewModel.currentColor)
 
-                Spacer()
-
-                ShareLink(
-                    item: URL(string: "https://shared-drawing.web.app/?id=\(canvasId)") ?? URL(fileURLWithPath: ""),
-                    subject: Text("Join my canvas"),
-                    message: Text("Draw together on canvas \(canvasId)")
-                ) {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 14))
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Color.white)
-
-            // Drawing Canvas
-            ZStack {
-                Canvas { context, _ in
-                    for stroke in viewModel.strokes {
-                        renderStroke(stroke, in: &context)
-                    }
-
-                    if let current = currentStroke {
-                        renderStroke(current, in: &context)
-                    }
-                }
-                .background(Color.white)
-
-                StrokeCaptureView(
-                    onPointsCapture: { points in
-                        print("📍 Touch: \(points.count) points, isDrawing=\(isDrawing)")
-                        guard !points.isEmpty else { return }
-
-                        if !isDrawing {
-                            print("🎨 Starting new stroke")
-                            isDrawing = true
-                            currentStroke = viewModel.startStroke(at: points.first ?? .zero)
+                // Drawing Canvas
+                ZStack {
+                    Canvas { context, _ in
+                        for stroke in viewModel.strokes {
+                            renderStroke(stroke, in: &context)
                         }
 
-                        if var stroke = currentStroke {
-                            for point in points {
-                                viewModel.addStrokePoint(point, to: &stroke)
-                            }
-                            currentStroke = stroke
+                        if let current = currentStroke {
+                            renderStroke(current, in: &context)
+                        }
+                    }
+                    .background(Color.white)
 
-                            let now = Date()
-                            if lastUpdateTime == nil || now.timeIntervalSince(lastUpdateTime ?? now) >= throttleInterval {
-                                lastUpdateTime = now
-                                Task {
-                                    do {
-                                        try await viewModel.repository.updateStroke(stroke, in: canvasId)
-                                    } catch {
-                                        print("❌ Error updating stroke: \(error)")
+                    StrokeCaptureView(
+                        onPointsCapture: { points in
+                            print("📍 Touch: \(points.count) points, isDrawing=\(isDrawing)")
+                            guard !points.isEmpty else { return }
+
+                            if !isDrawing {
+                                print("🎨 Starting new stroke")
+                                isDrawing = true
+                                currentStroke = viewModel.startStroke(at: points.first ?? .zero)
+                            }
+
+                            if var stroke = currentStroke {
+                                for point in points {
+                                    viewModel.addStrokePoint(point, to: &stroke)
+                                }
+                                currentStroke = stroke
+
+                                let now = Date()
+                                if lastUpdateTime == nil || now.timeIntervalSince(lastUpdateTime ?? now) >= throttleInterval {
+                                    lastUpdateTime = now
+                                    Task {
+                                        do {
+                                            try await viewModel.repository.updateStroke(stroke, in: canvasId)
+                                        } catch {
+                                            print("❌ Error updating stroke: \(error)")
+                                        }
                                     }
                                 }
                             }
+                        },
+                        onStrokeEnded: {
+                            print("✋ Stroke ended, submitting \(currentStroke?.points.count ?? 0) points")
+                            guard let stroke = currentStroke else { return }
+                            let endedStroke = stroke
+                            currentStroke = nil
+                            isDrawing = false
+                            Task {
+                                await viewModel.submitStroke(endedStroke)
+                                print("✅ Stroke submitted")
+                            }
                         }
-                    },
-                    onStrokeEnded: {
-                        print("✋ Stroke ended, submitting \(currentStroke?.points.count ?? 0) points")
-                        guard let stroke = currentStroke else { return }
-                        let endedStroke = stroke
-                        currentStroke = nil
-                        isDrawing = false
-                        Task {
-                            await viewModel.submitStroke(endedStroke)
-                            print("✅ Stroke submitted")
-                        }
-                    }
-                )
+                    )
+                }
             }
         }
         .padding(.vertical, 48)

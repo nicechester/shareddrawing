@@ -14,20 +14,26 @@ struct SharedDrawingApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if isInitialized {
-                ContentView(deepLinkCanvasId: $deepLinkCanvasId, authService: authService)
-                    .ignoresSafeArea()
-                    .onOpenURL { url in
-                        if let canvasId = url.queryItemValue(for: "id") {
-                            deepLinkCanvasId = canvasId
+            Group {
+                if isInitialized {
+                    ContentView(deepLinkCanvasId: $deepLinkCanvasId, authService: authService)
+                        .ignoresSafeArea()
+                } else {
+                    ProgressView("Initializing...")
+                        .task {
+                            try? await authService.signInAnonymously()
+                            isInitialized = true
                         }
-                    }
-            } else {
-                ProgressView("Initializing...")
-                    .task {
-                        try? await authService.signInAnonymously()
-                        isInitialized = true
-                    }
+                }
+            }
+            .onOpenURL { url in
+                print("🔗 Received URL:", url.absoluteString)
+                if let canvasId = url.queryItemValue(for: "id") {
+                    print("🎯 Parsed Canvas ID:", canvasId)
+                    deepLinkCanvasId = canvasId
+                } else {
+                    print("⚠️ Could not parse 'id' parameter from:", url)
+                }
             }
         }
     }

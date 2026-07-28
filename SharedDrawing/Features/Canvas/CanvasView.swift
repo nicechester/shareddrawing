@@ -7,19 +7,20 @@ struct CanvasView: View {
     @State private var lastUpdateTime: Date?
     @State private var showCanvasIDSheet = false
     @State private var showClearConfirmation = false
+    @State private var canvasId: String
 
-    @Binding var canvasId: String
     let repository: CanvasRepository
     let authService: AuthService
 
     private let throttleInterval: TimeInterval = 0.05  // ~50ms throttle for live updates
 
-    init(canvasId: Binding<String>, repository: CanvasRepository, authService: AuthService) {
-        self._canvasId = canvasId
+    init(canvasId: String, repository: CanvasRepository, authService: AuthService) {
         self.repository = repository
         self.authService = authService
+        let initialCanvasId = canvasId
+        self._canvasId = State(initialValue: initialCanvasId)
         self._viewModel = State(initialValue: CanvasViewModel(
-            canvasId: canvasId.wrappedValue,
+            canvasId: initialCanvasId,
             repository: repository,
             authService: authService
         ))

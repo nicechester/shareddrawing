@@ -3,13 +3,13 @@ import SwiftUI
 struct CanvasIDView: View {
     @State private var enteredID = ""
     @State private var selectedCanvasID: String?
+    @Environment(\.dismiss) var dismiss
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
-                Text("SharedDrawing")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+                Text("Create or Join Canvas")
+                    .font(.headline)
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Canvas ID")
@@ -42,7 +42,7 @@ struct CanvasIDView: View {
             .navigationDestination(isPresented: .constant(selectedCanvasID != nil)) {
                 if let canvasID = selectedCanvasID {
                     CanvasView(
-                        canvasId: .constant(canvasID),
+                        canvasId: canvasID,
                         repository: FirebaseCanvasRepository(),
                         authService: AuthService()
                     )

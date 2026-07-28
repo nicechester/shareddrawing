@@ -19,6 +19,18 @@ class CanvasViewModel {
         self.repository = repository
         self.authService = authService
         setupStrokeListener()
+        saveCanvasMetadata()
+    }
+
+    private func saveCanvasMetadata() {
+        guard let userId = authService.currentUserID else { return }
+        Task {
+            try? await FirestoreService.shared.saveCanvas(
+                id: canvasId,
+                name: canvasId,
+                userId: userId
+            )
+        }
     }
 
     func switchToCanvas(_ newCanvasId: String) {
@@ -74,6 +86,13 @@ class CanvasViewModel {
         do {
             try await repository.addStroke(finalStroke, to: canvasId)
             undoStack.push(finalStroke)
+
+            if let userId = authService.currentUserID {
+                try? await FirestoreService.shared.updateLastActivity(
+                    canvasId: canvasId,
+                    userId: userId
+                )
+            }
         } catch {
             print("Error submitting stroke: \(error)")
         }

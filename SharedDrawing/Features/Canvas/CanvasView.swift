@@ -88,37 +88,9 @@ struct CanvasView: View {
                 Text("This will permanently delete all drawings on this canvas. This action cannot be undone.")
             }
 
-            // Color palette on left, canvas on right
-            HStack(spacing: 0) {
-                // Palette sidebar
-                VStack(spacing: 12) {
-                    Button(action: { isPaletteCollapsed.toggle() }) {
-                        Image(systemName: isPaletteCollapsed ? "chevron.right" : "chevron.left")
-                            .font(.system(size: 12))
-                            .foregroundColor(.gray)
-                    }
-
-                    if !isPaletteCollapsed {
-                        ColorPalettePicker(selectedColor: $viewModel.currentColor, vertical: true)
-                    } else {
-                        Circle()
-                            .fill(Color(hex: viewModel.currentColor))
-                            .frame(width: 32, height: 32)
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.white, lineWidth: 2)
-                            )
-                    }
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 12)
-                .background(Color(.systemGray6))
-                .cornerRadius(8)
-
-                Spacer()
-
-                // Drawing Canvas
-                ZStack {
+            // Drawing Canvas with floating palette on top
+            ZStack(alignment: .topLeading) {
+                // Canvas
                     Canvas { context, _ in
                         for stroke in viewModel.strokes {
                             renderStroke(stroke, in: &context)
@@ -173,6 +145,31 @@ struct CanvasView: View {
                         }
                     )
                 }
+
+                // Floating color palette (top-left)
+                VStack(spacing: 12) {
+                    Button(action: { isPaletteCollapsed.toggle() }) {
+                        Image(systemName: isPaletteCollapsed ? "chevron.right" : "chevron.left")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+                    }
+
+                    if !isPaletteCollapsed {
+                        ColorPalettePicker(selectedColor: $viewModel.currentColor, vertical: true)
+                    } else {
+                        Circle()
+                            .fill(Color(hex: viewModel.currentColor))
+                            .frame(width: 32, height: 32)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white, lineWidth: 2)
+                            )
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 12)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
             }
         }
         .padding(.vertical, 48)

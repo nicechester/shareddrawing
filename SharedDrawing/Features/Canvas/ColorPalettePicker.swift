@@ -40,6 +40,7 @@ struct ColorPalettePicker: View {
                 }
                 .accessibilityLabel("Add background image")
             }
+            .frame(width: 48)
             .padding(.horizontal, 8)
             .padding(.vertical, 12)
             .background(Color(.systemGray6))

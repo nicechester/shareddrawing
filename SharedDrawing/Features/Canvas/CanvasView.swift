@@ -115,8 +115,7 @@ struct CanvasView: View {
                         if let bgImage = backgroundImage {
                             Image(uiImage: bgImage)
                                 .resizable()
-                                .scaledToFill()
-                                .opacity(0.3)
+                                .ignoresSafeArea()
                         }
 
                         Canvas { context, size in

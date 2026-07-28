@@ -15,7 +15,7 @@ struct SharedDrawingApp: App {
     var body: some Scene {
         WindowGroup {
             if isInitialized {
-                ContentView(authService: authService, deepLinkCanvasId: $deepLinkCanvasId)
+                ContentView(deepLinkCanvasId: $deepLinkCanvasId, authService: authService)
                     .ignoresSafeArea()
                     .onOpenURL { url in
                         if let canvasId = url.queryItemValue(for: "id") {

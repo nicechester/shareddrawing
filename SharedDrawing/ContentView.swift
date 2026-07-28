@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var currentCanvasID: String = UUID().uuidString.prefix(5).lowercased()
+    @Binding var deepLinkCanvasId: String?
 
     let authService: AuthService
 
@@ -11,15 +12,23 @@ struct ContentView: View {
             repository: FirebaseCanvasRepository(),
             authService: authService
         )
+        .onAppear {
+                    consumeDeepLink()
+        }
+        .onChange(of: deepLinkCanvasId) { _, _ in
+            consumeDeepLink()
+        }
     }
 
-    private func generateRandomID() -> String {
-        let characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        return String((0..<5).map { _ in characters.randomElement()! })
+    private func consumeDeepLink() {
+        if let newId = deepLinkCanvasId {
+            currentCanvasID = newId
+            deepLinkCanvasId = nil
+        }
     }
 }
 
 #Preview {
     let auth = AuthService()
-    ContentView(authService: auth)
+    ContentView(deepLinkCanvasId: .constant(nil), authService: auth)
 }

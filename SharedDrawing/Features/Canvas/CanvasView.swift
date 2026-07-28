@@ -108,12 +108,14 @@ struct CanvasView: View {
                                 Circle()
                                     .stroke(Color.white, lineWidth: 2)
                             )
-                        Spacer()
                     }
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 12)
                 .background(Color(.systemGray6))
+                .cornerRadius(8)
+
+                Spacer()
 
                 // Drawing Canvas
                 ZStack {

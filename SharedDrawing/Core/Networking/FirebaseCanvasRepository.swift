@@ -45,6 +45,10 @@ class FirebaseCanvasRepository: CanvasRepository {
         print("📤 Adding stroke \(stroke.id) to canvas \(canvasId): \(strokeData.count) fields")
         try await strokeRef.setValue(strokeData)
         print("✅ Stroke \(stroke.id) added successfully")
+
+        // Update canvas lastActivityAt for retention policy
+        let metaRef = database.child("v2/canvases").child(canvasId).child("meta").child("lastActivityAt")
+        try await metaRef.setValue(ServerValue.timestamp())
     }
 
     func updateStroke(_ stroke: Stroke, in canvasId: String) async throws {

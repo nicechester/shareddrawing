@@ -59,12 +59,24 @@ class GCSImageUploader {
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpBody = "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=\(jwt)".data(using: .utf8)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
 
-        if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let token = json["access_token"] as? String {
-            return token
+        if let httpResponse = response as? HTTPURLResponse {
+            print("📊 Access token response: \(httpResponse.statusCode)")
         }
+
+        if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            if let token = json["access_token"] as? String {
+                print("✅ Access token obtained")
+                return token
+            } else if let error = json["error"] as? String {
+                print("❌ GCS error: \(error) - \(json["error_description"] ?? "")")
+                throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: error])
+            }
+        }
+
+        let responseStr = String(data: data, encoding: .utf8) ?? "unknown"
+        print("❌ Failed to get access token. Response: \(responseStr)")
         throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to get access token"])
     }
 
@@ -86,6 +98,7 @@ class GCSImageUploader {
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard let keyData = Data(base64Encoded: pemData) else {
+            print("❌ Failed to decode base64 private key (length: \(pemData.count))")
             throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid private key format"])
         }
 
@@ -96,8 +109,11 @@ class GCSImageUploader {
 
         var error: Unmanaged<CFError>?
         guard let key = SecKeyCreateWithData(keyData as CFData, attributes as CFDictionary, &error) else {
-            throw error?.takeRetainedValue() as Error? ?? NSError(domain: "GCS", code: -1)
+            let errorMsg = error?.takeRetainedValue().localizedDescription ?? "Unknown error"
+            print("❌ Failed to create SecKey: \(errorMsg)")
+            throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: errorMsg])
         }
+        print("✅ Private key loaded successfully")
         return key
     }
 

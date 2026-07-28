@@ -15,6 +15,7 @@
 		3B2E5F842C4D8A0E00123456 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3B2E5F832C4D8A0E00123456 /* Assets.xcassets */; };
 		3B2E5FA02C4D8A0E00123456 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B2E5F9F2C4D8A0E00123456 /* AuthService.swift */; };
 		454A82333017F7F0002BDC49 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 454A82323017F7F0002BDC49 /* GoogleService-Info.plist */; };
+		45EF25CE30196A9000FBFAF9 /* shared-drawing-937885038a49.json in Resources */ = {isa = PBXBuildFile; fileRef = 45EF25CD30196A9000FBFAF9 /* shared-drawing-937885038a49.json */; };
 		5d2c792ef1e8b74b311873ed /* SharedDrawing/FirebaseCanvasRepository.swift in Resources */ = {isa = PBXBuildFile; fileRef = 2f877309c0604eb699f54548 /* SharedDrawing/FirebaseCanvasRepository.swift */; };
 		6a6f326d2f586d82d9ad59f1 /* SharedDrawing/FakeCanvasRepository.swift in Resources */ = {isa = PBXBuildFile; fileRef = f832836a513430da4e7806f6 /* SharedDrawing/FakeCanvasRepository.swift */; };
 		6cc8586e89db89a14e6348aa /* SharedDrawing/StrokePoint.swift in Resources */ = {isa = PBXBuildFile; fileRef = 3e26c55bd10f5e5cc0f7a1ef /* SharedDrawing/StrokePoint.swift */; };
@@ -37,6 +38,7 @@
 		3e26c55bd10f5e5cc0f7a1ef /* SharedDrawing/StrokePoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDrawing/StrokePoint.swift; sourceTree = "<group>"; };
 		4238650f4565289756e3e00c /* SharedDrawing/CanvasRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDrawing/CanvasRepository.swift; sourceTree = "<group>"; };
 		454A82323017F7F0002BDC49 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		45EF25CD30196A9000FBFAF9 /* shared-drawing-937885038a49.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shared-drawing-937885038a49.json"; sourceTree = "<group>"; };
 		45c4b6243b90e187ffe7bb44 /* SharedDrawing/Stroke.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDrawing/Stroke.swift; sourceTree = "<group>"; };
 		886d36225c7d82f3226d85ed /* SharedDrawing/StrokeCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDrawing/StrokeCaptureView.swift; sourceTree = "<group>"; };
 		cf10c97bb6a4fd438ac6d29c /* SharedDrawing/CanvasViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDrawing/CanvasViewModel.swift; sourceTree = "<group>"; };
@@ -71,6 +73,7 @@
 				3B2E5F8D2C4D8A0E00123456 /* Products */,
 				451C7D9130167A49001B6350 /* Recovered References */,
 				454A82323017F7F0002BDC49 /* GoogleService-Info.plist */,
+				45EF25CD30196A9000FBFAF9 /* shared-drawing-937885038a49.json */,
 			);
 			sourceTree = "<group>";
 		};
@@ -200,6 +203,7 @@
 				2eb82ac6ff77b04bd92aca20 /* SharedDrawing/Stroke.swift in Resources */,
 				6cc8586e89db89a14e6348aa /* SharedDrawing/StrokePoint.swift in Resources */,
 				729f6c869387cb051b38b8ac /* SharedDrawing/CanvasMeta.swift in Resources */,
+				45EF25CE30196A9000FBFAF9 /* shared-drawing-937885038a49.json in Resources */,
 				f4737b48d7a3b5238aea19b3 /* SharedDrawing/CanvasRepository.swift in Resources */,
 				5d2c792ef1e8b74b311873ed /* SharedDrawing/FirebaseCanvasRepository.swift in Resources */,
 				6a6f326d2f586d82d9ad59f1 /* SharedDrawing/FakeCanvasRepository.swift in Resources */,

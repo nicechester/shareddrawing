@@ -140,8 +140,13 @@ class GCSImageUploader {
             data as CFData,
             &error
         ) as Data? else {
-            throw error?.takeRetainedValue() as Error? ?? NSError(domain: "GCS", code: -1)
+            if let error = error?.takeRetainedValue() {
+                print("❌ Signature error: \(error.localizedDescription)")
+                throw error as Error
+            }
+            throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: "Signing failed"])
         }
+        print("✅ Data signed successfully")
         return signature
     }
 

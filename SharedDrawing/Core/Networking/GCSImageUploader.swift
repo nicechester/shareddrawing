@@ -1,17 +1,10 @@
 import Foundation
-import CryptoKit
 
 class GCSImageUploader {
     private let bucket: String
-    private let serviceAccountEmail: String
-    private let privateKeyPEM: String
-    private let projectId: String
 
     init(bucket: String, serviceAccountEmail: String, privateKeyPEM: String, projectId: String) {
         self.bucket = bucket
-        self.serviceAccountEmail = serviceAccountEmail
-        self.privateKeyPEM = privateKeyPEM
-        self.projectId = projectId
     }
 
     func uploadImage(_ imageData: Data, canvasId: String, userId: String) async throws -> String {
@@ -20,151 +13,45 @@ class GCSImageUploader {
 
         print("📤 Uploading image to GCS: \(objectPath)")
 
-        let accessToken = try await getAccessToken()
+        // Use JSON API for unauthenticated upload (requires bucket CORS + public write access)
+        // For MVP, we'll use a simple multipart upload with no auth
+        let uploadURL = URL(string: "https://www.googleapis.com/upload/storage/v1/b/\(bucket)/o?uploadType=multipart")!
 
-        // Upload image to GCS
-        let uploadURL = URL(string: "https://storage.googleapis.com/upload/storage/v1/b/\(bucket)/o?uploadType=media&name=\(objectPath.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? objectPath)")!
         var uploadRequest = URLRequest(url: uploadURL)
         uploadRequest.httpMethod = "POST"
-        uploadRequest.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         uploadRequest.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
-        uploadRequest.httpBody = imageData
+
+        // Create multipart body
+        let boundary = UUID().uuidString
+        var body = Data()
+
+        // Metadata part
+        let metadata = #"{"name":"\#(objectPath)"}"#
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Type: application/json; charset=UTF-8\r\n\r\n".data(using: .utf8)!)
+        body.append(metadata.data(using: .utf8)!)
+        body.append("\r\n".data(using: .utf8)!)
+
+        // Image data part
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+        body.append(imageData)
+        body.append("\r\n".data(using: .utf8)!)
+        body.append("--\(boundary)--".data(using: .utf8)!)
+
+        uploadRequest.setValue("multipart/related; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        uploadRequest.httpBody = body
 
         let (_, response) = try await URLSession.shared.data(for: uploadRequest)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
             throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to upload image"])
         }
 
         print("✅ Image uploaded: \(objectPath)")
 
-        // Generate signed URL (3-hour expiry)
-        let signedURL = try generateSignedURL(objectPath: objectPath, expiresIn: 3 * 60 * 60)
-        return signedURL
-    }
-
-    private func getAccessToken() async throws -> String {
-        let now = Int(Date().timeIntervalSince1970)
-        let expiry = now + 3600
-
-        let header = base64URLEncode(#"{"alg":"RS256","typ":"JWT"}"#)
-        let claims = base64URLEncode(#"{"iss":"\#(serviceAccountEmail)","scope":"https://www.googleapis.com/auth/devstorage.full_control","aud":"https://oauth2.googleapis.com/token","exp":\#(expiry),"iat":\#(now)}"#)
-
-        let signatureInput = "\(header).\(claims)"
-        let signature = try signJWT(signatureInput)
-        let jwt = "\(signatureInput).\(signature)"
-
-        // Exchange JWT for access token
-        var request = URLRequest(url: URL(string: "https://oauth2.googleapis.com/token")!)
-        request.httpMethod = "POST"
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        request.httpBody = "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=\(jwt)".data(using: .utf8)
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        if let httpResponse = response as? HTTPURLResponse {
-            print("📊 Access token response: \(httpResponse.statusCode)")
-        }
-
-        if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            if let token = json["access_token"] as? String {
-                print("✅ Access token obtained")
-                return token
-            } else if let error = json["error"] as? String {
-                print("❌ GCS error: \(error) - \(json["error_description"] ?? "")")
-                throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: error])
-            }
-        }
-
-        let responseStr = String(data: data, encoding: .utf8) ?? "unknown"
-        print("❌ Failed to get access token. Response: \(responseStr)")
-        throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to get access token"])
-    }
-
-    private func signJWT(_ input: String) throws -> String {
-        guard let inputData = input.data(using: .utf8) else {
-            throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to encode JWT input"])
-        }
-
-        // Parse private key and sign
-        let privateKey = try parsePrivateKey(privateKeyPEM)
-        let signature = try signData(inputData, with: privateKey)
-        return base64URLEncode(signature)
-    }
-
-    private func parsePrivateKey(_ pemString: String) throws -> SecKey {
-        // Handle both literal \n and actual newlines
-        let normalizedPEM = pemString.replacingOccurrences(of: "\\n", with: "\n")
-        print("📝 PEM string length: \(normalizedPEM.count)")
-        print("📝 Starts with BEGIN: \(normalizedPEM.contains("-----BEGIN"))")
-        print("📝 Ends with END: \(normalizedPEM.contains("-----END"))")
-
-        let pemData = normalizedPEM
-            .replacingOccurrences(of: "-----BEGIN PRIVATE KEY-----", with: "")
-            .replacingOccurrences(of: "-----END PRIVATE KEY-----", with: "")
-            .replacingOccurrences(of: "-----BEGIN RSA PRIVATE KEY-----", with: "")
-            .replacingOccurrences(of: "-----END RSA PRIVATE KEY-----", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            // Remove all whitespace including newlines within the base64 string
-            .replacingOccurrences(of: "\n", with: "")
-            .replacingOccurrences(of: " ", with: "")
-
-        print("📝 Base64 string length after cleanup: \(pemData.count)")
-
-        guard let keyData = Data(base64Encoded: pemData) else {
-            print("❌ Failed to decode base64 private key (base64 length: \(pemData.count))")
-            throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid private key format"])
-        }
-
-        print("📝 Decoded key data length: \(keyData.count) bytes")
-
-        let attributes: [String: Any] = [
-            kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
-            kSecAttrKeyClass as String: kSecAttrKeyClassPrivate
-        ]
-
-        var error: Unmanaged<CFError>?
-        guard let key = SecKeyCreateWithData(keyData as CFData, attributes as CFDictionary, &error) else {
-            let errorMsg = error?.takeRetainedValue().localizedDescription ?? "Unknown error"
-            print("❌ Failed to create SecKey: \(errorMsg) (data length: \(keyData.count))")
-            throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: errorMsg])
-        }
-        print("✅ Private key loaded successfully (key size: \(SecKeyGetBlockSize(key)) bytes)")
-        return key
-    }
-
-    private func signData(_ data: Data, with key: SecKey) throws -> Data {
-        var error: Unmanaged<CFError>?
-        guard let signature = SecKeyCreateSignature(
-            key,
-            .rsaSignatureMessagePKCS1v15SHA256,
-            data as CFData,
-            &error
-        ) as Data? else {
-            if let error = error?.takeRetainedValue() {
-                print("❌ Signature error: \(error.localizedDescription)")
-                throw error as Error
-            }
-            throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: "Signing failed"])
-        }
-        print("✅ Data signed successfully")
-        return signature
-    }
-
-    private func base64URLEncode(_ string: String) -> String {
-        guard let data = string.data(using: .utf8) else { return "" }
-        return base64URLEncode(data)
-    }
-
-    private func base64URLEncode(_ data: Data) -> String {
-        return data.base64EncodedString()
-            .replacingOccurrences(of: "=", with: "")
-            .replacingOccurrences(of: "+", with: "-")
-            .replacingOccurrences(of: "/", with: "_")
-    }
-
-    private func generateSignedURL(objectPath: String, expiresIn: Int) throws -> String {
-        let expiresAt = Int(Date().timeIntervalSince1970) + expiresIn
-        let encodedPath = objectPath.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? objectPath
-        return "https://storage.googleapis.com/\(bucket)/\(encodedPath)?exp=\(expiresAt)"
+        // Return public URL (requires bucket to allow public reads)
+        let publicURL = "https://storage.googleapis.com/\(bucket)/\(objectPath)"
+        print("📍 Public URL: \(publicURL)")
+        return publicURL
     }
 }

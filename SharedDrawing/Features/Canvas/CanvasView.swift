@@ -98,8 +98,27 @@ struct CanvasView: View {
                 self.backgroundImage = newImage
                 Task {
                     do {
-                        // TODO: Upload to GCS and get signed URL
-                        try await viewModel.updateBackgroundImage("placeholder-url")
+                        guard let jpegData = newImage.jpegData(compressionQuality: 0.8) else {
+                            print("❌ Failed to compress image")
+                            return
+                        }
+
+                        // Upload to GCS and get signed URL
+                        guard let serviceAccount = ServiceAccountLoader.loadKey() else {
+                            print("❌ Service account key not found")
+                            return
+                        }
+
+                        let uploader = GCSImageUploader(
+                            bucket: "shared-drawing",
+                            serviceAccountEmail: serviceAccount.client_email,
+                            privateKeyPEM: serviceAccount.private_key,
+                            projectId: serviceAccount.project_id
+                        )
+
+                        let signedURL = try await uploader.uploadImage(jpegData, canvasId: canvasId, userId: authService.currentUserID ?? "anonymous")
+                        try await viewModel.updateBackgroundImage(signedURL)
+                        print("✅ Background image uploaded and stored: \(signedURL)")
                     } catch {
                         print("❌ Error uploading image: \(error)")
                     }

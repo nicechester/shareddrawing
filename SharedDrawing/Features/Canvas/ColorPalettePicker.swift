@@ -3,6 +3,7 @@ import SwiftUI
 struct ColorPalettePicker: View {
     @Binding var selectedColor: String
     var vertical: Bool = false
+    var onImagePickerTapped: (() -> Void)?
 
     private let colors: [(name: String, hex: String)] = [
         ("Black", "#000000"),
@@ -27,6 +28,17 @@ struct ColorPalettePicker: View {
                     }
                     .accessibilityLabel(color.name)
                 }
+
+                Divider()
+                    .padding(.vertical, 4)
+
+                Button(action: { onImagePickerTapped?() }) {
+                    Image(systemName: "photo.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(.blue)
+                        .frame(width: 32, height: 32)
+                }
+                .accessibilityLabel("Add background image")
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 12)
@@ -45,6 +57,14 @@ struct ColorPalettePicker: View {
                     }
                     .accessibilityLabel(color.name)
                 }
+
+                Button(action: { onImagePickerTapped?() }) {
+                    Image(systemName: "photo.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(.blue)
+                }
+                .accessibilityLabel("Add background image")
+
                 Spacer()
             }
             .padding(.horizontal, 12)
@@ -55,6 +75,8 @@ struct ColorPalettePicker: View {
 
 #Preview {
     @Previewable @State var selectedColor = "#000000"
-    ColorPalettePicker(selectedColor: $selectedColor)
+    ColorPalettePicker(selectedColor: $selectedColor, onImagePickerTapped: {
+        print("Image picker tapped")
+    })
         .padding()
 }

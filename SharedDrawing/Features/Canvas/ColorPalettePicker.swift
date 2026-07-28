@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ColorPalettePicker: View {
     @Binding var selectedColor: String
+    var vertical: Bool = false
 
     private let colors: [(name: String, hex: String)] = [
         ("Black", "#000000"),
@@ -12,23 +13,44 @@ struct ColorPalettePicker: View {
     ]
 
     var body: some View {
-        HStack(spacing: 8) {
-            ForEach(colors, id: \.hex) { color in
-                Button(action: { selectedColor = color.hex }) {
-                    Circle()
-                        .fill(Color(hex: color.hex))
-                        .frame(width: 24, height: 24)
-                        .overlay(
-                            Circle()
-                                .stroke(Color.white, lineWidth: selectedColor == color.hex ? 3 : 0)
-                        )
+        if vertical {
+            VStack(spacing: 12) {
+                ForEach(colors, id: \.hex) { color in
+                    Button(action: { selectedColor = color.hex }) {
+                        Circle()
+                            .fill(Color(hex: color.hex))
+                            .frame(width: 32, height: 32)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white, lineWidth: selectedColor == color.hex ? 3 : 0)
+                            )
+                    }
+                    .accessibilityLabel(color.name)
                 }
-                .accessibilityLabel(color.name)
+                Spacer()
             }
-            Spacer()
+            .padding(.horizontal, 8)
+            .padding(.vertical, 12)
+            .background(Color(.systemGray6))
+        } else {
+            HStack(spacing: 8) {
+                ForEach(colors, id: \.hex) { color in
+                    Button(action: { selectedColor = color.hex }) {
+                        Circle()
+                            .fill(Color(hex: color.hex))
+                            .frame(width: 24, height: 24)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white, lineWidth: selectedColor == color.hex ? 3 : 0)
+                            )
+                    }
+                    .accessibilityLabel(color.name)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 4)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 4)
     }
 }
 

@@ -7,6 +7,7 @@ struct CanvasView: View {
     @State private var lastUpdateTime: Date?
     @State private var showCanvasIDSheet = false
     @State private var showClearConfirmation = false
+    @State private var isPaletteCollapsed = false
 
     @Binding var canvasId: String
     let repository: CanvasRepository
@@ -89,7 +90,21 @@ struct CanvasView: View {
 
             // Color palette on left, canvas on right
             HStack(spacing: 0) {
-                ColorPalettePicker(selectedColor: $viewModel.currentColor)
+                VStack(spacing: 0) {
+                    Button(action: { isPaletteCollapsed.toggle() }) {
+                        Image(systemName: isPaletteCollapsed ? "chevron.right" : "chevron.left")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+                            .frame(height: 44)
+                    }
+
+                    if !isPaletteCollapsed {
+                        ColorPalettePicker(selectedColor: $viewModel.currentColor, vertical: true)
+                    }
+
+                    Spacer()
+                }
+                .background(Color(.systemGray6))
 
                 // Drawing Canvas
                 ZStack {

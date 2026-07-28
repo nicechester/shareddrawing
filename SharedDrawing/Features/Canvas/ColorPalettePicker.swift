@@ -27,7 +27,6 @@ struct ColorPalettePicker: View {
                     }
                     .accessibilityLabel(color.name)
                 }
-                Spacer()
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 12)

@@ -8,6 +8,9 @@ struct CanvasView: View {
     @State private var showCanvasIDSheet = false
     @State private var showClearConfirmation = false
     @State private var isPaletteCollapsed = false
+    @State private var showImagePicker = false
+    @State private var selectedImage: UIImage?
+    @State private var backgroundImage: UIImage?
 
     @Binding var canvasId: String
     let repository: CanvasRepository
@@ -87,20 +90,45 @@ struct CanvasView: View {
             } message: {
                 Text("This will permanently delete all drawings on this canvas. This action cannot be undone.")
             }
+            .sheet(isPresented: $showImagePicker) {
+                ImagePicker(isPresented: $showImagePicker, selectedImage: $selectedImage)
+            }
+            .onChange(of: selectedImage) { _, newImage in
+                guard let newImage = newImage else { return }
+                self.backgroundImage = newImage
+                Task {
+                    do {
+                        // TODO: Upload to GCS and get signed URL
+                        try await viewModel.updateBackgroundImage("placeholder-url")
+                    } catch {
+                        print("❌ Error uploading image: \(error)")
+                    }
+                }
+            }
 
             // Drawing Canvas with floating palette on top
             ZStack(alignment: .topLeading) {
                 // Canvas
-                    Canvas { context, _ in
-                        for stroke in viewModel.strokes {
-                            renderStroke(stroke, in: &context)
+                    ZStack {
+                        Color.white
+
+                        if let bgImage = backgroundImage {
+                            Image(uiImage: bgImage)
+                                .resizable()
+                                .scaledToFill()
+                                .opacity(0.3)
                         }
 
-                        if let current = currentStroke {
-                            renderStroke(current, in: &context)
+                        Canvas { context, size in
+                            for stroke in viewModel.strokes {
+                                renderStroke(stroke, in: &context)
+                            }
+
+                            if let current = currentStroke {
+                                renderStroke(current, in: &context)
+                            }
                         }
                     }
-                    .background(Color.white)
 
                     StrokeCaptureView(
                         onPointsCapture: { points in
@@ -155,7 +183,11 @@ struct CanvasView: View {
                     }
 
                     if !isPaletteCollapsed {
-                        ColorPalettePicker(selectedColor: $viewModel.currentColor, vertical: true)
+                        ColorPalettePicker(
+                            selectedColor: $viewModel.currentColor,
+                            vertical: true,
+                            onImagePickerTapped: { showImagePicker = true }
+                        )
                     } else {
                         Circle()
                             .fill(Color(hex: viewModel.currentColor))

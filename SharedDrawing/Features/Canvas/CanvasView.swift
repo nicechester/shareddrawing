@@ -42,8 +42,8 @@ struct CanvasView: View {
                     showCanvasIDSheet = true
                 }) {
                     HStack {
-                        Text("Canvas ID: '\(canvasId)'")
-                            .font(.system(size: 18))
+                        Text("\(canvasId)")
+                            .font(.title)
                             .monospaced()
                         Spacer()
                     }
@@ -90,21 +90,22 @@ struct CanvasView: View {
 
             // Color palette on left, canvas on right
             HStack(spacing: 0) {
-                VStack(spacing: 0) {
+                // Collapse button on far left
+                VStack {
                     Button(action: { isPaletteCollapsed.toggle() }) {
                         Image(systemName: isPaletteCollapsed ? "chevron.right" : "chevron.left")
                             .font(.system(size: 12))
                             .foregroundColor(.gray)
-                            .frame(height: 44)
                     }
-
-                    if !isPaletteCollapsed {
-                        ColorPalettePicker(selectedColor: $viewModel.currentColor, vertical: true)
-                    }
-
+                    .frame(width: 32, height: 32)
                     Spacer()
                 }
                 .background(Color(.systemGray6))
+
+                // Palette (hidden when collapsed)
+                if !isPaletteCollapsed {
+                    ColorPalettePicker(selectedColor: $viewModel.currentColor, vertical: true)
+                }
 
                 // Drawing Canvas
                 ZStack {

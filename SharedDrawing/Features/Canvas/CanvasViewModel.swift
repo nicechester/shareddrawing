@@ -6,6 +6,7 @@ class CanvasViewModel {
     var strokes: [Stroke] = []
     var currentColor: String = "#000000"  // Black by default
     var canvasId: String
+    var backgroundImageUrl: String?
     var canUndo: Bool { !undoStack.isEmpty || lastClearedStrokes != nil }
 
     let repository: CanvasRepository
@@ -100,6 +101,12 @@ class CanvasViewModel {
 
     func recordClear(_ strokes: [Stroke]) {
         lastClearedStrokes = strokes
+    }
+
+    func updateBackgroundImage(_ imageUrl: String) async throws {
+        try await repository.updateBackgroundImageUrl(imageUrl, for: canvasId)
+        self.backgroundImageUrl = imageUrl
+        print("✅ Background image URL updated: \(imageUrl)")
     }
 
     deinit {

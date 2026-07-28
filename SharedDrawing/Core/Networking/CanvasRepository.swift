@@ -11,4 +11,5 @@ protocol CanvasRepository {
     func addStroke(_ stroke: Stroke, to canvasId: String) async throws
     func updateStroke(_ stroke: Stroke, in canvasId: String) async throws
     func removeStroke(id: String, from canvasId: String) async throws
+    func updateBackgroundImageUrl(_ url: String, for canvasId: String) async throws
 }

@@ -99,9 +99,12 @@ class GCSImageUploader {
             .replacingOccurrences(of: "-----BEGIN PRIVATE KEY-----", with: "")
             .replacingOccurrences(of: "-----END PRIVATE KEY-----", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+            // Remove all whitespace including newlines within the base64 string
+            .replacingOccurrences(of: "\n", with: "")
+            .replacingOccurrences(of: " ", with: "")
 
         guard let keyData = Data(base64Encoded: pemData) else {
-            print("❌ Failed to decode base64 private key (length: \(pemData.count), contains newlines: \(pemData.contains("\n")))")
+            print("❌ Failed to decode base64 private key (length: \(pemData.count))")
             throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid private key format"])
         }
 

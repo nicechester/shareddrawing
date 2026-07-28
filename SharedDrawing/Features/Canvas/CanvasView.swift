@@ -144,7 +144,6 @@ struct CanvasView: View {
                             }
                         }
                     )
-                }
 
                 // Floating color palette (top-left)
                 VStack(spacing: 12) {

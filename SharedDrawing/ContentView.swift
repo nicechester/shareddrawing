@@ -8,7 +8,7 @@ struct ContentView: View {
 
     var body: some View {
         CanvasView(
-            canvasId: deepLinkCanvasId ?? currentCanvasID,
+            canvasId: $currentCanvasID,
             repository: FirebaseCanvasRepository(),
             authService: authService
         )
@@ -24,6 +24,11 @@ struct ContentView: View {
         let characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
         return String((0..<5).map { _ in characters.randomElement()! })
     }
+}
+
+#Preview {
+    let auth = AuthService()
+    ContentView(authService: auth, deepLinkCanvasId: .constant(nil))
 }
 
 #Preview {

@@ -149,9 +149,10 @@ struct CanvasView: View {
                 // Floating color palette (top-left)
                 VStack(spacing: 12) {
                     Button(action: { isPaletteCollapsed.toggle() }) {
-                        Image(systemName: isPaletteCollapsed ? "chevron.right" : "chevron.left")
-                            .font(.system(size: 12))
+                        Text(isPaletteCollapsed ? "v" : "^")
+                            .font(.system(size: 14, weight: .bold))
                             .foregroundColor(.gray)
+                            .frame(width: 24, height: 24)
                     }
 
                     if !isPaletteCollapsed {

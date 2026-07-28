@@ -94,19 +94,28 @@ class GCSImageUploader {
     private func parsePrivateKey(_ pemString: String) throws -> SecKey {
         // Handle both literal \n and actual newlines
         let normalizedPEM = pemString.replacingOccurrences(of: "\\n", with: "\n")
+        print("📝 PEM string length: \(normalizedPEM.count)")
+        print("📝 Starts with BEGIN: \(normalizedPEM.contains("-----BEGIN"))")
+        print("📝 Ends with END: \(normalizedPEM.contains("-----END"))")
 
         let pemData = normalizedPEM
             .replacingOccurrences(of: "-----BEGIN PRIVATE KEY-----", with: "")
             .replacingOccurrences(of: "-----END PRIVATE KEY-----", with: "")
+            .replacingOccurrences(of: "-----BEGIN RSA PRIVATE KEY-----", with: "")
+            .replacingOccurrences(of: "-----END RSA PRIVATE KEY-----", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
             // Remove all whitespace including newlines within the base64 string
             .replacingOccurrences(of: "\n", with: "")
             .replacingOccurrences(of: " ", with: "")
 
+        print("📝 Base64 string length after cleanup: \(pemData.count)")
+
         guard let keyData = Data(base64Encoded: pemData) else {
-            print("❌ Failed to decode base64 private key (length: \(pemData.count))")
+            print("❌ Failed to decode base64 private key (base64 length: \(pemData.count))")
             throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid private key format"])
         }
+
+        print("📝 Decoded key data length: \(keyData.count) bytes")
 
         let attributes: [String: Any] = [
             kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
@@ -116,10 +125,10 @@ class GCSImageUploader {
         var error: Unmanaged<CFError>?
         guard let key = SecKeyCreateWithData(keyData as CFData, attributes as CFDictionary, &error) else {
             let errorMsg = error?.takeRetainedValue().localizedDescription ?? "Unknown error"
-            print("❌ Failed to create SecKey: \(errorMsg)")
+            print("❌ Failed to create SecKey: \(errorMsg) (data length: \(keyData.count))")
             throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: errorMsg])
         }
-        print("✅ Private key loaded successfully")
+        print("✅ Private key loaded successfully (key size: \(SecKeyGetBlockSize(key)) bytes)")
         return key
     }
 

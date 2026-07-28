@@ -28,10 +28,10 @@ struct ContentView: View {
 
 #Preview {
     let auth = AuthService()
-    ContentView(authService: auth, deepLinkCanvasId: .constant(nil))
+    ContentView(deepLinkCanvasId: .constant(nil), authService: auth)
 }
 
 #Preview {
     let auth = AuthService()
-    ContentView(authService: auth)
+    ContentView(deepLinkCanvasId: .constant(nil), authService: auth)
 }

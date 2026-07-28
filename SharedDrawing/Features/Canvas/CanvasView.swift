@@ -70,7 +70,7 @@ struct CanvasView: View {
                 Text("This will permanently delete all drawings on this canvas. This action cannot be undone.")
             }
 
-            // Undo button + Color palette
+            // Undo button + Color palette + Share
             HStack(spacing: 12) {
                 Button(action: {
                     Task { await viewModel.undo() }
@@ -83,6 +83,15 @@ struct CanvasView: View {
                 Spacer()
 
                 ColorPalettePicker(selectedColor: $viewModel.currentColor)
+
+                ShareLink(
+                    item: URL(string: "https://shared-drawing.web.app/?id=\(canvasId)") ?? URL(fileURLWithPath: ""),
+                    subject: Text("Join my canvas"),
+                    message: Text("Draw together on canvas \(canvasId)")
+                ) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 16))
+                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)

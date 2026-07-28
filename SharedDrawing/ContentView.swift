@@ -2,15 +2,22 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var currentCanvasID: String = UUID().uuidString.prefix(5).lowercased()
+    @Binding var deepLinkCanvasId: String?
 
     let authService: AuthService
 
     var body: some View {
         CanvasView(
-            canvasId: $currentCanvasID,
+            canvasId: deepLinkCanvasId ?? currentCanvasID,
             repository: FirebaseCanvasRepository(),
             authService: authService
         )
+        .onChange(of: deepLinkCanvasId) { _, newId in
+            if let newId = newId {
+                currentCanvasID = newId
+                deepLinkCanvasId = nil
+            }
+        }
     }
 
     private func generateRandomID() -> String {

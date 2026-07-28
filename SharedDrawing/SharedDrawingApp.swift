@@ -5,6 +5,7 @@ import Firebase
 struct SharedDrawingApp: App {
     @State private var authService: AuthService
     @State private var isInitialized = false
+    @State private var deepLinkCanvasId: String?
 
     init() {
         FirebaseApp.configure()
@@ -14,8 +15,13 @@ struct SharedDrawingApp: App {
     var body: some Scene {
         WindowGroup {
             if isInitialized {
-                ContentView(authService: authService)
+                ContentView(authService: authService, deepLinkCanvasId: $deepLinkCanvasId)
                     .ignoresSafeArea()
+                    .onOpenURL { url in
+                        if let canvasId = url.queryItemValue(for: "id") {
+                            deepLinkCanvasId = canvasId
+                        }
+                    }
             } else {
                 ProgressView("Initializing...")
                     .task {
@@ -24,5 +30,14 @@ struct SharedDrawingApp: App {
                     }
             }
         }
+    }
+}
+
+extension URL {
+    func queryItemValue(for name: String) -> String? {
+        URLComponents(url: self, resolvingAgainstBaseURL: false)?
+            .queryItems?
+            .first(where: { $0.name == name })?
+            .value
     }
 }

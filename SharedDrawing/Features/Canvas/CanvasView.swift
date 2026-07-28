@@ -71,18 +71,18 @@ struct CanvasView: View {
             }
 
             // Undo button + Color palette + Share
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 Button(action: {
                     Task { await viewModel.undo() }
                 }) {
                     Image(systemName: "arrow.uturn.backward")
-                        .font(.system(size: 16))
+                        .font(.system(size: 14))
                 }
                 .disabled(!viewModel.canUndo)
 
-                Spacer()
-
                 ColorPalettePicker(selectedColor: $viewModel.currentColor)
+
+                Spacer()
 
                 ShareLink(
                     item: URL(string: "https://shared-drawing.web.app/?id=\(canvasId)") ?? URL(fileURLWithPath: ""),
@@ -90,7 +90,7 @@ struct CanvasView: View {
                     message: Text("Draw together on canvas \(canvasId)")
                 ) {
                     Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 16))
+                        .font(.system(size: 14))
                 }
             }
             .padding(.horizontal, 12)

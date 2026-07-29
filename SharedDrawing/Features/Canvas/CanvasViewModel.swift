@@ -15,6 +15,7 @@ class CanvasViewModel {
     let repository: CanvasRepository
     private let authService: AuthService
     private var strokeListenerTask: Task<Void, Never>?
+    private var backgroundImageListenerTask: Task<Void, Never>?
     private var undoStack = Stack<Stroke>()
     private var lastClearedStrokes: [Stroke]?
 
@@ -27,6 +28,7 @@ class CanvasViewModel {
 
     func switchToCanvas(_ newCanvasId: String) {
         strokeListenerTask?.cancel()
+        backgroundImageListenerTask?.cancel()
         canvasId = newCanvasId
         strokes = []
         backgroundImageUrl = nil
@@ -67,16 +69,25 @@ class CanvasViewModel {
     }
 
     private func setupStrokeListener() {
-        // Load background image from metadata
-        Task {
-            do {
-                let url = try await repository.getBackgroundImageUrl(for: canvasId)
-                if let url = url {
-                    self.backgroundImageUrl = url
-                    print("📸 Loaded background image URL: \(url)")
+        // Load background image from metadata and listen for real-time updates
+        backgroundImageListenerTask = Task {
+            while !Task.isCancelled {
+                do {
+                    let url = try await repository.getBackgroundImageUrl(for: canvasId)
+                    if url != backgroundImageUrl {
+                        backgroundImageUrl = url
+                        if let url = url {
+                            print("📸 Loaded background image URL: \(url)")
+                        } else {
+                            print("📸 Background image cleared")
+                        }
+                    }
+                } catch {
+                    print("⚠️ Failed to load background image URL: \(error)")
                 }
-            } catch {
-                print("⚠️ Failed to load background image URL: \(error)")
+
+                // Check for updates every 2 seconds
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
             }
         }
 

@@ -146,19 +146,24 @@ struct CanvasView: View {
                 }
             }
             .onChange(of: viewModel.backgroundImageUrl) { _, newUrl in
-                guard let urlString = newUrl, let url = URL(string: urlString) else { return }
-                Task {
-                    do {
-                        let (data, _) = try await URLSession.shared.data(from: url)
-                        if let uiImage = UIImage(data: data) {
-                            DispatchQueue.main.async {
-                                self.backgroundImage = uiImage
-                                print("✅ Background image loaded from URL")
+                if let urlString = newUrl, let url = URL(string: urlString) {
+                    Task {
+                        do {
+                            let (data, _) = try await URLSession.shared.data(from: url)
+                            if let uiImage = UIImage(data: data) {
+                                DispatchQueue.main.async {
+                                    self.backgroundImage = uiImage
+                                    print("✅ Background image loaded from URL")
+                                }
                             }
+                        } catch {
+                            print("❌ Failed to load background image from URL: \(error)")
                         }
-                    } catch {
-                        print("❌ Failed to load background image from URL: \(error)")
                     }
+                } else {
+                    // URL was cleared, remove background image
+                    backgroundImage = nil
+                    print("✅ Background image cleared")
                 }
             }
 

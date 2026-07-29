@@ -26,6 +26,7 @@ class CanvasViewModel {
         strokeListenerTask?.cancel()
         canvasId = newCanvasId
         strokes = []
+        backgroundImageUrl = nil
         setupStrokeListener()
     }
 

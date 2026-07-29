@@ -77,6 +77,7 @@ class FirebaseCanvasRepository: CanvasRepository {
     func removeBackgroundImage(for canvasId: String) async throws {
         let metaRef = database.child("v2/canvases").child(canvasId).child("meta").child("backgroundImageUrl")
         try await metaRef.removeValue()
+        print("🗑️ Dropped backgroundImageUrl node for canvas \(canvasId)")
     }
 
     // MARK: - Private Helpers

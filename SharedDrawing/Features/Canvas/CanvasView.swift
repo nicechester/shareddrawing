@@ -16,6 +16,9 @@ struct CanvasView: View {
     @GestureState private var gestureZoom: CGFloat = 1.0
     @GestureState private var gestureRotation: Double = 0.0
     @State private var canvasSize: CGSize = .zero
+    @State private var showSignInPrompt = false
+    @State private var signInErrorMessage: String? = nil
+    @State private var showSignInError = false
 
     @Binding var canvasId: String
     let repository: CanvasRepository
@@ -60,6 +63,14 @@ struct CanvasView: View {
                     Image(systemName: isPointerMode ? "hand.point.up.fill" : "pencil")
                         .font(.system(size: 14))
                         .foregroundColor(isPointerMode ? .blue : .primary)
+                }
+
+                if !viewModel.isAnonymous {
+                    Button(action: { Task { try? await authService.signOut() } }) {
+                        Image(systemName: "person.crop.circle.badge.minus")
+                            .font(.system(size: 14))
+                    }
+                    .accessibilityLabel("Sign out")
                 }
 
                 Button(action: {
@@ -297,7 +308,7 @@ struct CanvasView: View {
                         ColorPalettePicker(
                             selectedColor: $viewModel.currentColor,
                             vertical: true,
-                            onImagePickerTapped: { showImagePicker = true }
+                            onImagePickerTapped: { handleAddImageTapped() }
                         )
                     } else {
                         Circle()
@@ -343,6 +354,17 @@ struct CanvasView: View {
             currentStroke = nil
             isDrawing = false
             viewModel.switchToCanvas(newCanvasId)
+        }
+        .alert("Sign in required", isPresented: $showSignInPrompt) {
+            Button("Sign in with Google") { Task { await performGoogleSignIn() } }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Sign in with Google to add a background image.")
+        }
+        .alert("Sign-In Failed", isPresented: $showSignInError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(signInErrorMessage ?? "Something went wrong.")
         }
     }
 
@@ -432,6 +454,26 @@ struct CanvasView: View {
             with: .color(color),
             lineWidth: stroke.width
         )
+    }
+
+    private func handleAddImageTapped() {
+        if viewModel.isAnonymous {
+            showSignInPrompt = true
+        } else {
+            showImagePicker = true
+        }
+    }
+
+    private func performGoogleSignIn() async {
+        do {
+            try await authService.signInWithGoogle()
+            showImagePicker = true
+        } catch AuthError.cancelled {
+            // Silent — user backed out of Google sheet
+        } catch {
+            signInErrorMessage = error.localizedDescription
+            showSignInError = true
+        }
     }
 }
 

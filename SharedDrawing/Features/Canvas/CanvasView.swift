@@ -12,6 +12,7 @@ struct CanvasView: View {
     @State private var selectedImage: UIImage?
     @State private var backgroundImage: UIImage?
     @State private var isPointerMode = false  // false=pen, true=pointer/pan
+    @State private var lastPointerPosition: CGPoint = .zero
 
     @Binding var canvasId: String
     let repository: CanvasRepository
@@ -178,23 +179,17 @@ struct CanvasView: View {
 
                             if isPointerMode {
                                 // In pointer mode, use drag to pan
-                                if let prevPoint = currentStroke?.points.last {
+                                guard let currentPoint = points.last else { return }
+
+                                if lastPointerPosition != .zero {
                                     let delta = CGPoint(
-                                        x: points.first?.x ?? 0 - prevPoint.x,
-                                        y: points.first?.y ?? 0 - prevPoint.y
+                                        x: currentPoint.x - lastPointerPosition.x,
+                                        y: currentPoint.y - lastPointerPosition.y
                                     )
-                                    viewModel.pan(delta)
+                                    // Negate delta so dragging right pans right (not left)
+                                    viewModel.pan(CGPoint(x: -delta.x, y: -delta.y))
                                 }
-                                // Store last point for next delta calculation
-                                if currentStroke == nil {
-                                    currentStroke = viewModel.startStroke(at: points.first ?? .zero)
-                                }
-                                if var stroke = currentStroke {
-                                    for point in points {
-                                        viewModel.addStrokePoint(point, to: &stroke)
-                                    }
-                                    currentStroke = stroke
-                                }
+                                lastPointerPosition = currentPoint
                             } else {
                                 // In pen mode, draw strokes
                                 print("📍 Touch: \(points.count) points, isDrawing=\(isDrawing)")
@@ -231,7 +226,7 @@ struct CanvasView: View {
                         onStrokeEnded: {
                             if isPointerMode {
                                 // Reset pointer tracking
-                                currentStroke = nil
+                                lastPointerPosition = .zero
                             } else {
                                 print("✋ Stroke ended, submitting \(currentStroke?.points.count ?? 0) points")
                                 guard let stroke = currentStroke else { return }
@@ -243,7 +238,6 @@ struct CanvasView: View {
                                     print("✅ Stroke submitted")
                                 }
                             }
-                        }
                         }
                     )
 

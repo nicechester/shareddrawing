@@ -13,4 +13,5 @@ protocol CanvasRepository {
     func removeStroke(id: String, from canvasId: String) async throws
     func updateBackgroundImageUrl(_ url: String, for canvasId: String) async throws
     func getBackgroundImageUrl(for canvasId: String) async throws -> String?
+    func removeBackgroundImage(for canvasId: String) async throws
 }

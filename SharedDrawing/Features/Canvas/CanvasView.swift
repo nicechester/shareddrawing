@@ -258,6 +258,16 @@ struct CanvasView: View {
                 }
             }
             viewModel.strokes = []
+
+            // Also clear background image
+            do {
+                try await repository.removeBackgroundImage(for: canvasId)
+                viewModel.backgroundImageUrl = nil
+                backgroundImage = nil
+                print("✅ Canvas and background image cleared")
+            } catch {
+                print("❌ Error clearing background image: \(error)")
+            }
         }
     }
 

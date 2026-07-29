@@ -63,6 +63,23 @@ class FirebaseCanvasRepository: CanvasRepository {
         try await strokeRef.removeValue()
     }
 
+    func updateBackgroundImageUrl(_ url: String, for canvasId: String) async throws {
+        let metaRef = database.child("v2/canvases").child(canvasId).child("meta").child("backgroundImageUrl")
+        try await metaRef.setValue(url)
+    }
+
+    func getBackgroundImageUrl(for canvasId: String) async throws -> String? {
+        let metaRef = database.child("v2/canvases").child(canvasId).child("meta").child("backgroundImageUrl")
+        let snapshot = try await metaRef.getData()
+        return snapshot.value as? String
+    }
+
+    func removeBackgroundImage(for canvasId: String) async throws {
+        let metaRef = database.child("v2/canvases").child(canvasId).child("meta").child("backgroundImageUrl")
+        try await metaRef.removeValue()
+        print("🗑️ Dropped backgroundImageUrl node for canvas \(canvasId)")
+    }
+
     // MARK: - Private Helpers
 
     private func decodeStroke(from snapshot: DataSnapshot) -> Stroke? {

@@ -8,6 +8,9 @@ struct CanvasView: View {
     @State private var showCanvasIDSheet = false
     @State private var showClearConfirmation = false
     @State private var isPaletteCollapsed = false
+    @State private var showImagePicker = false
+    @State private var selectedImage: UIImage?
+    @State private var backgroundImage: UIImage?
 
     @Binding var canvasId: String
     let repository: CanvasRepository
@@ -87,20 +90,79 @@ struct CanvasView: View {
             } message: {
                 Text("This will permanently delete all drawings on this canvas. This action cannot be undone.")
             }
+            .sheet(isPresented: $showImagePicker) {
+                ImagePicker(isPresented: $showImagePicker, selectedImage: $selectedImage)
+            }
+            .onChange(of: selectedImage) { _, newImage in
+                guard let newImage = newImage else { return }
+                self.backgroundImage = newImage
+                Task {
+                    do {
+                        guard let jpegData = newImage.jpegData(compressionQuality: 0.8) else {
+                            print("❌ Failed to compress image")
+                            return
+                        }
+
+                        // Upload to GCS and get signed URL
+                        guard let serviceAccount = ServiceAccountLoader.loadKey() else {
+                            print("❌ Service account key not found")
+                            return
+                        }
+
+                        let uploader = GCSImageUploader(
+                            bucket: "shared-drawing",
+                            serviceAccountEmail: serviceAccount.client_email,
+                            privateKeyPEM: serviceAccount.private_key,
+                            projectId: serviceAccount.project_id
+                        )
+
+                        let signedURL = try await uploader.uploadImage(jpegData, canvasId: canvasId, userId: authService.currentUserID ?? "anonymous")
+                        try await viewModel.updateBackgroundImage(signedURL)
+                        print("✅ Background image uploaded and stored: \(signedURL)")
+                    } catch {
+                        print("❌ Error uploading image: \(error)")
+                    }
+                }
+            }
+            .onChange(of: viewModel.backgroundImageUrl) { _, newUrl in
+                guard let urlString = newUrl, let url = URL(string: urlString) else { return }
+                Task {
+                    do {
+                        let (data, _) = try await URLSession.shared.data(from: url)
+                        if let uiImage = UIImage(data: data) {
+                            DispatchQueue.main.async {
+                                self.backgroundImage = uiImage
+                                print("✅ Background image loaded from URL")
+                            }
+                        }
+                    } catch {
+                        print("❌ Failed to load background image from URL: \(error)")
+                    }
+                }
+            }
 
             // Drawing Canvas with floating palette on top
             ZStack(alignment: .topLeading) {
                 // Canvas
-                    Canvas { context, _ in
-                        for stroke in viewModel.strokes {
-                            renderStroke(stroke, in: &context)
+                    ZStack {
+                        Color.white
+
+                        if let bgImage = backgroundImage {
+                            Image(uiImage: bgImage)
+                                .resizable()
+                                .ignoresSafeArea()
                         }
 
-                        if let current = currentStroke {
-                            renderStroke(current, in: &context)
+                        Canvas { context, size in
+                            for stroke in viewModel.strokes {
+                                renderStroke(stroke, in: &context)
+                            }
+
+                            if let current = currentStroke {
+                                renderStroke(current, in: &context)
+                            }
                         }
                     }
-                    .background(Color.white)
 
                     StrokeCaptureView(
                         onPointsCapture: { points in
@@ -155,7 +217,11 @@ struct CanvasView: View {
                     }
 
                     if !isPaletteCollapsed {
-                        ColorPalettePicker(selectedColor: $viewModel.currentColor, vertical: true)
+                        ColorPalettePicker(
+                            selectedColor: $viewModel.currentColor,
+                            vertical: true,
+                            onImagePickerTapped: { showImagePicker = true }
+                        )
                     } else {
                         Circle()
                             .fill(Color(hex: viewModel.currentColor))
@@ -192,6 +258,16 @@ struct CanvasView: View {
                 }
             }
             viewModel.strokes = []
+
+            // Also clear background image
+            do {
+                try await repository.removeBackgroundImage(for: canvasId)
+                viewModel.backgroundImageUrl = nil
+                backgroundImage = nil
+                print("✅ Canvas and background image cleared")
+            } catch {
+                print("❌ Error clearing background image: \(error)")
+            }
         }
     }
 

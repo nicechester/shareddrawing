@@ -7,6 +7,7 @@ class CanvasViewModel {
     var currentColor: String = "#000000"  // Black by default
     var canvasId: String
     var backgroundImageUrl: String?
+    var viewportOffset: CGPoint = .zero  // Pan offset for larger virtual canvas
     var canUndo: Bool { !undoStack.isEmpty || lastClearedStrokes != nil }
 
     let repository: CanvasRepository
@@ -27,28 +28,26 @@ class CanvasViewModel {
         canvasId = newCanvasId
         strokes = []
         backgroundImageUrl = nil
+        viewportOffset = .zero
         setupStrokeListener()
     }
 
+    func pan(_ offset: CGPoint) {
+        viewportOffset.x += offset.x
+        viewportOffset.y += offset.y
+    }
+
     private func setupStrokeListener() {
-        // Load background image from metadata (with retry)
+        // Load background image from metadata
         Task {
-            for attempt in 1...3 {
-                do {
-                    let url = try await repository.getBackgroundImageUrl(for: canvasId)
-                    if let url = url {
-                        self.backgroundImageUrl = url
-                        print("📸 Loaded background image URL: \(url)")
-                    }
-                    break
-                } catch {
-                    if attempt < 3 {
-                        print("⚠️ Attempt \(attempt) failed, retrying...")
-                        try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5s delay
-                    } else {
-                        print("⚠️ Failed to load background image URL after 3 attempts: \(error)")
-                    }
+            do {
+                let url = try await repository.getBackgroundImageUrl(for: canvasId)
+                if let url = url {
+                    self.backgroundImageUrl = url
+                    print("📸 Loaded background image URL: \(url)")
                 }
+            } catch {
+                print("⚠️ Failed to load background image URL: \(error)")
             }
         }
 

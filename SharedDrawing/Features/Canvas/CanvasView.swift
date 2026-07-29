@@ -11,6 +11,8 @@ struct CanvasView: View {
     @State private var showImagePicker = false
     @State private var selectedImage: UIImage?
     @State private var backgroundImage: UIImage?
+    @State private var isPointerMode = false  // false=pen, true=pointer/pan
+    @State private var lastPointerPosition: CGPoint = .zero
 
     @Binding var canvasId: String
     let repository: CanvasRepository
@@ -31,7 +33,7 @@ struct CanvasView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Canvas ID header with Undo/Share buttons
+            // Canvas ID header with Undo/Pan/Share buttons
             HStack(spacing: 8) {
                 Button(action: {
                     Task { await viewModel.undo() }
@@ -40,6 +42,13 @@ struct CanvasView: View {
                         .font(.system(size: 14))
                 }
                 .disabled(!viewModel.canUndo)
+
+                // Pointer/Pen toggle
+                Button(action: { isPointerMode.toggle() }) {
+                    Image(systemName: isPointerMode ? "hand.point.up.fill" : "pencil")
+                        .font(.system(size: 14))
+                        .foregroundColor(isPointerMode ? .blue : .primary)
+                }
 
                 Button(action: {
                     showCanvasIDSheet = true
@@ -155,54 +164,79 @@ struct CanvasView: View {
 
                         Canvas { context, size in
                             for stroke in viewModel.strokes {
-                                renderStroke(stroke, in: &context)
+                                renderStroke(stroke, in: &context, offset: viewModel.viewportOffset)
                             }
 
                             if let current = currentStroke {
-                                renderStroke(current, in: &context)
+                                renderStroke(current, in: &context, offset: viewModel.viewportOffset)
                             }
                         }
                     }
 
                     StrokeCaptureView(
                         onPointsCapture: { points in
-                            print("📍 Touch: \(points.count) points, isDrawing=\(isDrawing)")
                             guard !points.isEmpty else { return }
 
-                            if !isDrawing {
-                                print("🎨 Starting new stroke")
-                                isDrawing = true
-                                currentStroke = viewModel.startStroke(at: points.first ?? .zero)
-                            }
+                            if isPointerMode {
+                                // In pointer mode, use drag to pan
+                                guard let currentPoint = points.last else { return }
 
-                            if var stroke = currentStroke {
-                                for point in points {
-                                    viewModel.addStrokePoint(point, to: &stroke)
+                                if lastPointerPosition != .zero {
+                                    let delta = CGPoint(
+                                        x: currentPoint.x - lastPointerPosition.x,
+                                        y: currentPoint.y - lastPointerPosition.y
+                                    )
+                                    // Negate delta so dragging right pans right (not left)
+                                    viewModel.pan(CGPoint(x: -delta.x, y: -delta.y))
                                 }
-                                currentStroke = stroke
+                                lastPointerPosition = currentPoint
+                            } else {
+                                // In pen mode, draw strokes
+                                print("📍 Touch: \(points.count) points, isDrawing=\(isDrawing)")
 
-                                let now = Date()
-                                if lastUpdateTime == nil || now.timeIntervalSince(lastUpdateTime ?? now) >= throttleInterval {
-                                    lastUpdateTime = now
-                                    Task {
-                                        do {
-                                            try await viewModel.repository.updateStroke(stroke, in: canvasId)
-                                        } catch {
-                                            print("❌ Error updating stroke: \(error)")
+                                // Adjust points for viewport offset (convert screen to world coordinates)
+                                let adjustedPoints = points.map { CGPoint(x: $0.x + viewModel.viewportOffset.x, y: $0.y + viewModel.viewportOffset.y) }
+
+                                if !isDrawing {
+                                    print("🎨 Starting new stroke")
+                                    isDrawing = true
+                                    currentStroke = viewModel.startStroke(at: adjustedPoints.first ?? .zero)
+                                }
+
+                                if var stroke = currentStroke {
+                                    for point in adjustedPoints {
+                                        viewModel.addStrokePoint(point, to: &stroke)
+                                    }
+                                    currentStroke = stroke
+
+                                    let now = Date()
+                                    if lastUpdateTime == nil || now.timeIntervalSince(lastUpdateTime ?? now) >= throttleInterval {
+                                        lastUpdateTime = now
+                                        Task {
+                                            do {
+                                                try await viewModel.repository.updateStroke(stroke, in: canvasId)
+                                            } catch {
+                                                print("❌ Error updating stroke: \(error)")
+                                            }
                                         }
                                     }
                                 }
                             }
                         },
                         onStrokeEnded: {
-                            print("✋ Stroke ended, submitting \(currentStroke?.points.count ?? 0) points")
-                            guard let stroke = currentStroke else { return }
-                            let endedStroke = stroke
-                            currentStroke = nil
-                            isDrawing = false
-                            Task {
-                                await viewModel.submitStroke(endedStroke)
-                                print("✅ Stroke submitted")
+                            if isPointerMode {
+                                // Reset pointer tracking
+                                lastPointerPosition = .zero
+                            } else {
+                                print("✋ Stroke ended, submitting \(currentStroke?.points.count ?? 0) points")
+                                guard let stroke = currentStroke else { return }
+                                let endedStroke = stroke
+                                currentStroke = nil
+                                isDrawing = false
+                                Task {
+                                    await viewModel.submitStroke(endedStroke)
+                                    print("✅ Stroke submitted")
+                                }
                             }
                         }
                     )
@@ -271,15 +305,15 @@ struct CanvasView: View {
         }
     }
 
-    private func renderStroke(_ stroke: Stroke, in context: inout GraphicsContext) {
+    private func renderStroke(_ stroke: Stroke, in context: inout GraphicsContext, offset: CGPoint = .zero) {
         guard stroke.points.count > 1 else { return }
 
         var path = Path()
         let firstPoint = stroke.points[0]
-        path.move(to: CGPoint(x: firstPoint.x, y: firstPoint.y))
+        path.move(to: CGPoint(x: firstPoint.x - offset.x, y: firstPoint.y - offset.y))
 
         for point in stroke.points.dropFirst() {
-            path.addLine(to: CGPoint(x: point.x, y: point.y))
+            path.addLine(to: CGPoint(x: point.x - offset.x, y: point.y - offset.y))
         }
 
         let color = Color(hex: stroke.color)

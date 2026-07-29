@@ -30,14 +30,22 @@ class CanvasViewModel {
     }
 
     private func setupStrokeListener() {
-        // Load background image from metadata
+        // Load background image from metadata (with retry)
         Task {
-            do {
-                let url = try await repository.getBackgroundImageUrl(for: canvasId)
-                self.backgroundImageUrl = url
-                print("📸 Loaded background image URL: \(url ?? "none")")
-            } catch {
-                print("⚠️ Failed to load background image URL: \(error)")
+            for attempt in 1...3 {
+                do {
+                    let url = try await repository.getBackgroundImageUrl(for: canvasId)
+                    self.backgroundImageUrl = url
+                    print("📸 Loaded background image URL: \(url ?? "none")")
+                    break
+                } catch {
+                    if attempt < 3 {
+                        print("⚠️ Attempt \(attempt) failed, retrying...")
+                        try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5s delay
+                    } else {
+                        print("⚠️ Failed to load background image URL after 3 attempts: \(error)")
+                    }
+                }
             }
         }
 

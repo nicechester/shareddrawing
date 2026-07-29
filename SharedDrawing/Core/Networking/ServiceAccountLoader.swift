@@ -14,7 +14,7 @@ struct ServiceAccountKey: Codable {
 }
 
 class ServiceAccountLoader {
-    static func loadKey(from filename: String = "shared-drawing-937885038a49.json") -> ServiceAccountKey? {
+    static func loadKey(from filename: String = "shared-drawing-7910b9b25a2d.json") -> ServiceAccountKey? {
         guard let path = Bundle.main.path(forResource: filename.replacingOccurrences(of: ".json", with: ""), ofType: "json") else {
             print("⚠️ Service account key file not found: \(filename)")
             return nil

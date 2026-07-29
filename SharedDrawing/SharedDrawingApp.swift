@@ -1,5 +1,6 @@
 import SwiftUI
 import Firebase
+import GoogleSignIn
 
 @main
 struct SharedDrawingApp: App {
@@ -28,6 +29,9 @@ struct SharedDrawingApp: App {
             }
             .onOpenURL { url in
                 print("🔗 Received URL:", url.absoluteString)
+                if GIDSignIn.sharedInstance.handle(url) {
+                    return
+                }
                 if let canvasId = url.queryItemValue(for: "id") {
                     print("🎯 Parsed Canvas ID:", canvasId)
                     deepLinkCanvasId = canvasId

@@ -63,7 +63,15 @@ class FirebaseCanvasRepository: CanvasRepository {
         try await strokeRef.removeValue()
     }
 
-    func updateBackgroundImageUrl(_ url: String, width: Double?, height: Double?, for canvasId: String) async throws {
+    func updateBackgroundImageUrl(
+        _ url: String,
+        width: Double?,
+        height: Double?,
+        uploaderId: String?,
+        uploaderName: String?,
+        uploaderEmail: String?,
+        for canvasId: String
+    ) async throws {
         let metaRef = database.child("v2/canvases").child(canvasId).child("meta")
         var updates: [String: Any] = ["backgroundImageUrl": url]
         if let width = width {
@@ -71,6 +79,12 @@ class FirebaseCanvasRepository: CanvasRepository {
         }
         if let height = height {
             updates["imageHeight"] = height
+        }
+        if let uploaderId = uploaderId {
+            updates["uploadedBy"] = uploaderId
+            updates["uploaderName"] = uploaderName as Any
+            updates["uploaderEmail"] = uploaderEmail as Any
+            updates["uploadedAt"] = ServerValue.timestamp()
         }
         try await metaRef.updateChildValues(updates)
     }
@@ -99,8 +113,16 @@ class FirebaseCanvasRepository: CanvasRepository {
 
     func removeBackgroundImage(for canvasId: String) async throws {
         let metaRef = database.child("v2/canvases").child(canvasId).child("meta")
-        try await metaRef.updateChildValues(["backgroundImageUrl": NSNull(), "imageWidth": NSNull(), "imageHeight": NSNull()])
-        print("🗑️ Dropped backgroundImageUrl, imageWidth, and imageHeight nodes for canvas \(canvasId)")
+        try await metaRef.updateChildValues([
+            "backgroundImageUrl": NSNull(),
+            "imageWidth": NSNull(),
+            "imageHeight": NSNull(),
+            "uploadedBy": NSNull(),
+            "uploaderName": NSNull(),
+            "uploaderEmail": NSNull(),
+            "uploadedAt": NSNull()
+        ])
+        print("🗑️ Dropped backgroundImageUrl, imageWidth, imageHeight, and uploader fields for canvas \(canvasId)")
     }
 
     // MARK: - Private Helpers

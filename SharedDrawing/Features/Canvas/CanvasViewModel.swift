@@ -12,6 +12,7 @@ class CanvasViewModel {
     var zoomScale: CGFloat = 1.0  // 0.5–5.0
     var rotationAngle: Double = 0.0  // Radians
     var canUndo: Bool { !undoStack.isEmpty || lastClearedStrokes != nil }
+    var isAnonymous: Bool { authService.isAnonymous }
 
     let repository: CanvasRepository
     private let authService: AuthService
@@ -197,7 +198,19 @@ class CanvasViewModel {
     }
 
     func updateBackgroundImage(_ imageUrl: String, width: Double? = nil, height: Double? = nil) async throws {
-        try await repository.updateBackgroundImageUrl(imageUrl, width: width, height: height, for: canvasId)
+        let uploaderId = isAnonymous ? nil : authService.currentUserID
+        let uploaderName = isAnonymous ? nil : authService.currentUserName
+        let uploaderEmail = isAnonymous ? nil : authService.currentUserEmail
+
+        try await repository.updateBackgroundImageUrl(
+            imageUrl,
+            width: width,
+            height: height,
+            uploaderId: uploaderId,
+            uploaderName: uploaderName,
+            uploaderEmail: uploaderEmail,
+            for: canvasId
+        )
         self.backgroundImageUrl = imageUrl
         if let width = width, let height = height {
             self.imageSize = CGSize(width: width, height: height)

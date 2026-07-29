@@ -37,7 +37,9 @@ class CanvasViewModel {
                 do {
                     let url = try await repository.getBackgroundImageUrl(for: canvasId)
                     self.backgroundImageUrl = url
-                    print("📸 Loaded background image URL: \(url ?? "none")")
+                    if let url = url {
+                        print("📸 Loaded background image URL: \(url)")
+                    }
                     break
                 } catch {
                     if attempt < 3 {

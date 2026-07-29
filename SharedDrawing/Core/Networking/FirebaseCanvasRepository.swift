@@ -68,6 +68,12 @@ class FirebaseCanvasRepository: CanvasRepository {
         try await metaRef.setValue(url)
     }
 
+    func getBackgroundImageUrl(for canvasId: String) async throws -> String? {
+        let metaRef = database.child("v2/canvases").child(canvasId).child("meta").child("backgroundImageUrl")
+        let snapshot = try await metaRef.getData()
+        return snapshot.value as? String
+    }
+
     // MARK: - Private Helpers
 
     private func decodeStroke(from snapshot: DataSnapshot) -> Stroke? {

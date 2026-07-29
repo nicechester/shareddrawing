@@ -30,6 +30,17 @@ class CanvasViewModel {
     }
 
     private func setupStrokeListener() {
+        // Load background image from metadata
+        Task {
+            do {
+                let url = try await repository.getBackgroundImageUrl(for: canvasId)
+                self.backgroundImageUrl = url
+                print("📸 Loaded background image URL: \(url ?? "none")")
+            } catch {
+                print("⚠️ Failed to load background image URL: \(error)")
+            }
+        }
+
         // Listen to real-time stroke updates via AsyncStream
         strokeListenerTask = Task {
             for await event in repository.listenToStrokes(canvasId: canvasId) {

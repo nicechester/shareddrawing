@@ -7,6 +7,7 @@ class CanvasViewModel {
     var currentColor: String = "#000000"  // Black by default
     var canvasId: String
     var backgroundImageUrl: String?
+    var imageSize: CGSize?  // Width/height of background image
     var viewportOffset: CGPoint = .zero  // Pan offset for larger virtual canvas
     var zoomScale: CGFloat = 1.0  // 0.5–5.0
     var rotationAngle: Double = 0.0  // Radians
@@ -32,15 +33,20 @@ class CanvasViewModel {
         canvasId = newCanvasId
         strokes = []
         backgroundImageUrl = nil
+        imageSize = nil
         resetTransform()
         setupStrokeListener()
     }
 
-    func pan(screenDelta: CGPoint) {
+    func pan(screenDelta: CGPoint, fitScale: CGFloat = 1.0) {
         // Convert screen-space delta to world-space delta accounting for rotation and scale
         var delta = screenDelta
 
-        // Undo scale
+        // Undo fit scale
+        delta.x /= fitScale
+        delta.y /= fitScale
+
+        // Undo zoom scale
         delta.x /= zoomScale
         delta.y /= zoomScale
 
@@ -68,6 +74,24 @@ class CanvasViewModel {
         rotationAngle = 0.0
     }
 
+    func worldSize(fallback: CGSize) -> CGSize {
+        return imageSize ?? fallback
+    }
+
+    func fitScale(canvasSize: CGSize) -> CGFloat {
+        guard let imageSize = imageSize else { return 1.0 }
+        let scaleX = canvasSize.width / imageSize.width
+        let scaleY = canvasSize.height / imageSize.height
+        return min(scaleX, scaleY)  // Fit to smallest dimension
+    }
+
+    func backfillImageDimensionsIfNeeded(width: Double, height: Double) async {
+        if imageSize == nil {
+            imageSize = CGSize(width: width, height: height)
+            try? await repository.updateBackgroundImageDimensions(width: width, height: height, for: canvasId)
+        }
+    }
+
     private func setupStrokeListener() {
         // Load background image from metadata and listen for real-time updates
         backgroundImageListenerTask = Task {
@@ -82,8 +106,16 @@ class CanvasViewModel {
                             print("📸 Background image cleared")
                         }
                     }
+
+                    // Poll for dimension updates
+                    if let dimensions = try await repository.getBackgroundImageDimensions(for: canvasId) {
+                        if imageSize != dimensions {
+                            imageSize = dimensions
+                            print("📐 Loaded image dimensions: \(dimensions)")
+                        }
+                    }
                 } catch {
-                    print("⚠️ Failed to load background image URL: \(error)")
+                    print("⚠️ Failed to load background image metadata: \(error)")
                 }
 
                 // Check for updates every 2 seconds
@@ -164,9 +196,12 @@ class CanvasViewModel {
         lastClearedStrokes = strokes
     }
 
-    func updateBackgroundImage(_ imageUrl: String) async throws {
-        try await repository.updateBackgroundImageUrl(imageUrl, for: canvasId)
+    func updateBackgroundImage(_ imageUrl: String, width: Double? = nil, height: Double? = nil) async throws {
+        try await repository.updateBackgroundImageUrl(imageUrl, width: width, height: height, for: canvasId)
         self.backgroundImageUrl = imageUrl
+        if let width = width, let height = height {
+            self.imageSize = CGSize(width: width, height: height)
+        }
         print("✅ Background image URL updated: \(imageUrl)")
     }
 

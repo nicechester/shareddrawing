@@ -11,7 +11,9 @@ protocol CanvasRepository {
     func addStroke(_ stroke: Stroke, to canvasId: String) async throws
     func updateStroke(_ stroke: Stroke, in canvasId: String) async throws
     func removeStroke(id: String, from canvasId: String) async throws
-    func updateBackgroundImageUrl(_ url: String, for canvasId: String) async throws
+    func updateBackgroundImageUrl(_ url: String, width: Double?, height: Double?, for canvasId: String) async throws
     func getBackgroundImageUrl(for canvasId: String) async throws -> String?
+    func getBackgroundImageDimensions(for canvasId: String) async throws -> CGSize?
+    func updateBackgroundImageDimensions(width: Double, height: Double, for canvasId: String) async throws
     func removeBackgroundImage(for canvasId: String) async throws
 }

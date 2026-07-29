@@ -7,6 +7,7 @@ class CanvasViewModel {
     var currentColor: String = "#000000"  // Black by default
     var canvasId: String
     var backgroundImageUrl: String?
+    var viewportOffset: CGPoint = .zero  // Pan offset for larger virtual canvas
     var canUndo: Bool { !undoStack.isEmpty || lastClearedStrokes != nil }
 
     let repository: CanvasRepository
@@ -27,7 +28,13 @@ class CanvasViewModel {
         canvasId = newCanvasId
         strokes = []
         backgroundImageUrl = nil
+        viewportOffset = .zero
         setupStrokeListener()
+    }
+
+    func pan(_ offset: CGPoint) {
+        viewportOffset.x += offset.x
+        viewportOffset.y += offset.y
     }
 
     private func setupStrokeListener() {

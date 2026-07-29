@@ -31,7 +31,7 @@ struct CanvasView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Canvas ID header with Undo/Share buttons
+            // Canvas ID header with Undo/Pan/Share buttons
             HStack(spacing: 8) {
                 Button(action: {
                     Task { await viewModel.undo() }
@@ -40,6 +40,26 @@ struct CanvasView: View {
                         .font(.system(size: 14))
                 }
                 .disabled(!viewModel.canUndo)
+
+                // Pan buttons
+                HStack(spacing: 4) {
+                    Button(action: { viewModel.pan(.init(x: -50, y: 0)) }) {
+                        Image(systemName: "arrowshape.left")
+                            .font(.system(size: 12))
+                    }
+                    Button(action: { viewModel.pan(.init(x: 0, y: -50)) }) {
+                        Image(systemName: "arrowshape.up")
+                            .font(.system(size: 12))
+                    }
+                    Button(action: { viewModel.pan(.init(x: 0, y: 50)) }) {
+                        Image(systemName: "arrowshape.down")
+                            .font(.system(size: 12))
+                    }
+                    Button(action: { viewModel.pan(.init(x: 50, y: 0)) }) {
+                        Image(systemName: "arrowshape.right")
+                            .font(.system(size: 12))
+                    }
+                }
 
                 Button(action: {
                     showCanvasIDSheet = true
@@ -155,11 +175,11 @@ struct CanvasView: View {
 
                         Canvas { context, size in
                             for stroke in viewModel.strokes {
-                                renderStroke(stroke, in: &context)
+                                renderStroke(stroke, in: &context, offset: viewModel.viewportOffset)
                             }
 
                             if let current = currentStroke {
-                                renderStroke(current, in: &context)
+                                renderStroke(current, in: &context, offset: viewModel.viewportOffset)
                             }
                         }
                     }
@@ -271,15 +291,15 @@ struct CanvasView: View {
         }
     }
 
-    private func renderStroke(_ stroke: Stroke, in context: inout GraphicsContext) {
+    private func renderStroke(_ stroke: Stroke, in context: inout GraphicsContext, offset: CGPoint = .zero) {
         guard stroke.points.count > 1 else { return }
 
         var path = Path()
         let firstPoint = stroke.points[0]
-        path.move(to: CGPoint(x: firstPoint.x, y: firstPoint.y))
+        path.move(to: CGPoint(x: firstPoint.x - offset.x, y: firstPoint.y - offset.y))
 
         for point in stroke.points.dropFirst() {
-            path.addLine(to: CGPoint(x: point.x, y: point.y))
+            path.addLine(to: CGPoint(x: point.x - offset.x, y: point.y - offset.y))
         }
 
         let color = Color(hex: stroke.color)

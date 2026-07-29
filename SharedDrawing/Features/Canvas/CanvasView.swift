@@ -296,24 +296,26 @@ struct CanvasView: View {
                 .cornerRadius(8)
             }
             .gesture(
-                isPointerMode ? AnyGesture(
-                    SimultaneousGesture(
-                        MagnificationGesture()
-                            .updating($gestureZoom) { value, state, _ in
-                                state = value
-                            }
-                            .onEnded { value in
+                SimultaneousGesture(
+                    MagnificationGesture()
+                        .updating($gestureZoom) { value, state, _ in
+                            state = isPointerMode ? value : 1.0
+                        }
+                        .onEnded { value in
+                            if isPointerMode {
                                 viewModel.zoom(by: value)
-                            },
-                        RotationGesture()
-                            .updating($gestureRotation) { value, state, _ in
-                                state = value.radians
                             }
-                            .onEnded { value in
+                        },
+                    RotationGesture()
+                        .updating($gestureRotation) { value, state, _ in
+                            state = isPointerMode ? value.radians : 0.0
+                        }
+                        .onEnded { value in
+                            if isPointerMode {
                                 viewModel.rotate(by: value.radians)
                             }
-                    )
-                ) : AnyGesture(EmptyGesture())
+                        }
+                )
             )
         }
         .padding(.vertical, 48)
@@ -324,7 +326,7 @@ struct CanvasView: View {
             viewModel.switchToCanvas(newCanvasId)
         }
     }
-    
+
     private func canvasTransform() -> CGAffineTransform {
         let center = CGPoint(x: canvasSize.width / 2, y: canvasSize.height / 2)
         let liveScale = viewModel.zoomScale * gestureZoom

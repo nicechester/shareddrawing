@@ -8,6 +8,8 @@ class CanvasViewModel {
     var canvasId: String
     var backgroundImageUrl: String?
     var viewportOffset: CGPoint = .zero  // Pan offset for larger virtual canvas
+    var zoomScale: CGFloat = 1.0  // 0.5–5.0
+    var rotationAngle: Double = 0.0  // Radians
     var canUndo: Bool { !undoStack.isEmpty || lastClearedStrokes != nil }
 
     let repository: CanvasRepository
@@ -28,13 +30,40 @@ class CanvasViewModel {
         canvasId = newCanvasId
         strokes = []
         backgroundImageUrl = nil
-        viewportOffset = .zero
+        resetTransform()
         setupStrokeListener()
     }
 
-    func pan(_ offset: CGPoint) {
-        viewportOffset.x += offset.x
-        viewportOffset.y += offset.y
+    func pan(screenDelta: CGPoint) {
+        // Convert screen-space delta to world-space delta accounting for rotation and scale
+        var delta = screenDelta
+
+        // Undo scale
+        delta.x /= zoomScale
+        delta.y /= zoomScale
+
+        // Undo rotation
+        let cos = cos(-rotationAngle)
+        let sin = sin(-rotationAngle)
+        let rotatedX = delta.x * cos - delta.y * sin
+        let rotatedY = delta.x * sin + delta.y * cos
+
+        viewportOffset.x += rotatedX
+        viewportOffset.y += rotatedY
+    }
+
+    func zoom(by scale: CGFloat) {
+        zoomScale = max(0.5, min(5.0, zoomScale * scale))
+    }
+
+    func rotate(by angle: Double) {
+        rotationAngle += angle
+    }
+
+    func resetTransform() {
+        viewportOffset = .zero
+        zoomScale = 1.0
+        rotationAngle = 0.0
     }
 
     private func setupStrokeListener() {

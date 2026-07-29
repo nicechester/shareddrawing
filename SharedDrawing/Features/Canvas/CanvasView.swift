@@ -189,14 +189,17 @@ struct CanvasView: View {
                             print("📍 Touch: \(points.count) points, isDrawing=\(isDrawing)")
                             guard !points.isEmpty else { return }
 
+                            // Adjust points for viewport offset (convert screen to world coordinates)
+                            let adjustedPoints = points.map { CGPoint(x: $0.x + viewModel.viewportOffset.x, y: $0.y + viewModel.viewportOffset.y) }
+
                             if !isDrawing {
                                 print("🎨 Starting new stroke")
                                 isDrawing = true
-                                currentStroke = viewModel.startStroke(at: points.first ?? .zero)
+                                currentStroke = viewModel.startStroke(at: adjustedPoints.first ?? .zero)
                             }
 
                             if var stroke = currentStroke {
-                                for point in points {
+                                for point in adjustedPoints {
                                     viewModel.addStrokePoint(point, to: &stroke)
                                 }
                                 currentStroke = stroke

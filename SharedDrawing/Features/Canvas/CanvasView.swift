@@ -138,7 +138,9 @@ struct CanvasView: View {
                         )
 
                         let signedURL = try await uploader.uploadImage(jpegData, canvasId: canvasId, userId: authService.currentUserID ?? "anonymous")
-                        try await viewModel.updateBackgroundImage(signedURL)
+                        let width = Double(newImage.size.width)
+                        let height = Double(newImage.size.height)
+                        try await viewModel.updateBackgroundImage(signedURL, width: width, height: height)
                         print("✅ Background image uploaded and stored: \(signedURL)")
                     } catch {
                         print("❌ Error uploading image: \(error)")
@@ -155,6 +157,10 @@ struct CanvasView: View {
                                     self.backgroundImage = uiImage
                                     print("✅ Background image loaded from URL")
                                 }
+                                // Backfill dimensions if not already set
+                                let width = Double(uiImage.size.width)
+                                let height = Double(uiImage.size.height)
+                                await viewModel.backfillImageDimensionsIfNeeded(width: width, height: height)
                             }
                         } catch {
                             print("❌ Failed to load background image from URL: \(error)")
@@ -173,21 +179,29 @@ struct CanvasView: View {
                 ZStack {
                     Color.white
 
-                    if let bgImage = backgroundImage {
-                        Image(uiImage: bgImage)
-                            .resizable()
-                            .ignoresSafeArea()
-                    }
-
                     Canvas { context, size in
-                        let transform = canvasTransform()
+                        let worldSize = viewModel.worldSize(fallback: size)
+                        let fitScale = viewModel.fitScale(canvasSize: size)
+                        let transform = canvasTransform(worldSize: worldSize, fitScale: fitScale, canvasSize: size)
+
+                        // Apply transform to context so all drawing (image + strokes) moves together
+                        context.transform = transform
+
+                        // Draw background image if present (now transformed with strokes)
+                        if let bgImage = backgroundImage {
+                            let uiImage = UIImage(cgImage: bgImage.cgImage!)
+                            context.draw(
+                                Image(uiImage: uiImage),
+                                in: CGRect(x: 0, y: 0, width: worldSize.width, height: worldSize.height)
+                            )
+                        }
 
                         for stroke in viewModel.strokes {
-                            renderStroke(stroke, in: &context, transform: transform)
+                            renderStroke(stroke, in: &context)
                         }
 
                         if let current = currentStroke {
-                            renderStroke(current, in: &context, transform: transform)
+                            renderStroke(current, in: &context)
                         }
                     }
                     .coordinateSpace(.named("canvas"))
@@ -209,8 +223,8 @@ struct CanvasView: View {
                                     x: currentPoint.x - lastPointerPosition.x,
                                     y: currentPoint.y - lastPointerPosition.y
                                 )
-                                // Negate delta so dragging right pans right (not left)
-                                viewModel.pan(screenDelta: CGPoint(x: -delta.x, y: -delta.y))
+                                let fitScale = viewModel.fitScale(canvasSize: canvasSize)
+                                viewModel.pan(screenDelta: delta, fitScale: fitScale)
                             }
                             lastPointerPosition = currentPoint
                         } else {
@@ -332,26 +346,30 @@ struct CanvasView: View {
         }
     }
 
-    private func canvasTransform() -> CGAffineTransform {
-        let center = CGPoint(x: canvasSize.width / 2, y: canvasSize.height / 2)
-        let liveScale = viewModel.zoomScale * gestureZoom
+    private func canvasTransform(worldSize: CGSize, fitScale: CGFloat, canvasSize: CGSize) -> CGAffineTransform {
+        let screenCenter = CGPoint(x: canvasSize.width / 2, y: canvasSize.height / 2)
+        let imageCenterOffset = CGPoint(x: -worldSize.width / 2, y: -worldSize.height / 2)
+        let liveScale = viewModel.zoomScale * gestureZoom * fitScale
         let liveRotation = viewModel.rotationAngle + gestureRotation
 
         return CGAffineTransform.identity
-            .translatedBy(x: center.x, y: center.y)
+            .translatedBy(x: screenCenter.x, y: screenCenter.y)
             .rotated(by: liveRotation)
             .scaledBy(x: liveScale, y: liveScale)
-            .translatedBy(x: -center.x - viewModel.viewportOffset.x, y: -center.y - viewModel.viewportOffset.y)
+            .translatedBy(x: imageCenterOffset.x + viewModel.viewportOffset.x, y: imageCenterOffset.y + viewModel.viewportOffset.y)
     }
 
     private func screenToWorld(_ screenPoint: CGPoint) -> CGPoint {
         // Convert screen coordinate to world coordinate accounting for transform
-        let center = CGPoint(x: canvasSize.width / 2, y: canvasSize.height / 2)
-        let scale = viewModel.zoomScale * gestureZoom
+        let worldSize = viewModel.worldSize(fallback: canvasSize)
+        let fitScale = viewModel.fitScale(canvasSize: canvasSize)
+        let screenCenter = CGPoint(x: canvasSize.width / 2, y: canvasSize.height / 2)
+        let imageCenterOffset = CGPoint(x: -worldSize.width / 2, y: -worldSize.height / 2)
+        let scale = viewModel.zoomScale * gestureZoom * fitScale
         let rotation = viewModel.rotationAngle + gestureRotation
 
-        // Translate from center
-        var point = CGPoint(x: screenPoint.x - center.x, y: screenPoint.y - center.y)
+        // Translate from screen center
+        var point = CGPoint(x: screenPoint.x - screenCenter.x, y: screenPoint.y - screenCenter.y)
 
         // Inverse scale
         point.x /= scale
@@ -363,10 +381,11 @@ struct CanvasView: View {
         let rotatedX = point.x * cos - point.y * sin
         let rotatedY = point.x * sin + point.y * cos
 
-        // Add back center and viewport offset
+        // Add back image center offset and viewport offset (inverse of transform)
+        // The transform translates by (imageCenterOffset + viewportOffset), so we add those back
         return CGPoint(
-            x: rotatedX + center.x + viewModel.viewportOffset.x,
-            y: rotatedY + center.y + viewModel.viewportOffset.y
+            x: rotatedX - imageCenterOffset.x - viewModel.viewportOffset.x,
+            y: rotatedY - imageCenterOffset.y - viewModel.viewportOffset.y
         )
     }
 
@@ -386,6 +405,7 @@ struct CanvasView: View {
             do {
                 try await repository.removeBackgroundImage(for: canvasId)
                 viewModel.backgroundImageUrl = nil
+                viewModel.imageSize = nil
                 backgroundImage = nil
                 print("✅ Canvas and background image cleared")
             } catch {
@@ -394,7 +414,7 @@ struct CanvasView: View {
         }
     }
 
-    private func renderStroke(_ stroke: Stroke, in context: inout GraphicsContext, transform: CGAffineTransform) {
+    private func renderStroke(_ stroke: Stroke, in context: inout GraphicsContext) {
         guard stroke.points.count > 1 else { return }
 
         var path = Path()
@@ -405,12 +425,10 @@ struct CanvasView: View {
             path.addLine(to: CGPoint(x: point.x, y: point.y))
         }
 
-        // Apply transform to path
-        let transformedPath = path.applying(transform)
-
+        // context.transform is already applied, no need to transform path
         let color = Color(hex: stroke.color)
         context.stroke(
-            transformedPath,
+            path,
             with: .color(color),
             lineWidth: stroke.width
         )

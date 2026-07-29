@@ -63,9 +63,16 @@ class FirebaseCanvasRepository: CanvasRepository {
         try await strokeRef.removeValue()
     }
 
-    func updateBackgroundImageUrl(_ url: String, for canvasId: String) async throws {
-        let metaRef = database.child("v2/canvases").child(canvasId).child("meta").child("backgroundImageUrl")
-        try await metaRef.setValue(url)
+    func updateBackgroundImageUrl(_ url: String, width: Double?, height: Double?, for canvasId: String) async throws {
+        let metaRef = database.child("v2/canvases").child(canvasId).child("meta")
+        var updates: [String: Any] = ["backgroundImageUrl": url]
+        if let width = width {
+            updates["imageWidth"] = width
+        }
+        if let height = height {
+            updates["imageHeight"] = height
+        }
+        try await metaRef.updateChildValues(updates)
     }
 
     func getBackgroundImageUrl(for canvasId: String) async throws -> String? {
@@ -74,10 +81,26 @@ class FirebaseCanvasRepository: CanvasRepository {
         return snapshot.value as? String
     }
 
+    func getBackgroundImageDimensions(for canvasId: String) async throws -> CGSize? {
+        let metaRef = database.child("v2/canvases").child(canvasId).child("meta")
+        let snapshot = try await metaRef.getData()
+        guard let dict = snapshot.value as? [String: Any],
+              let width = dict["imageWidth"] as? Double,
+              let height = dict["imageHeight"] as? Double else {
+            return nil
+        }
+        return CGSize(width: width, height: height)
+    }
+
+    func updateBackgroundImageDimensions(width: Double, height: Double, for canvasId: String) async throws {
+        let metaRef = database.child("v2/canvases").child(canvasId).child("meta")
+        try await metaRef.updateChildValues(["imageWidth": width, "imageHeight": height])
+    }
+
     func removeBackgroundImage(for canvasId: String) async throws {
-        let metaRef = database.child("v2/canvases").child(canvasId).child("meta").child("backgroundImageUrl")
-        try await metaRef.removeValue()
-        print("🗑️ Dropped backgroundImageUrl node for canvas \(canvasId)")
+        let metaRef = database.child("v2/canvases").child(canvasId).child("meta")
+        try await metaRef.updateChildValues(["backgroundImageUrl": NSNull(), "imageWidth": NSNull(), "imageHeight": NSNull()])
+        print("🗑️ Dropped backgroundImageUrl, imageWidth, and imageHeight nodes for canvas \(canvasId)")
     }
 
     // MARK: - Private Helpers

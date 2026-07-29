@@ -5,4 +5,6 @@ struct CanvasMeta: Codable {
     let createdBy: String
     let createdAt: TimeInterval
     let lastActivityAt: TimeInterval
+    let imageWidth: Double?
+    let imageHeight: Double?
 }

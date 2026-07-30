@@ -21,6 +21,7 @@ class CanvasViewModel {
             UserDefaults.standard.set(selectedPenStyle.rawValue, forKey: Self.penStyleDefaultsKey)
         }
     }
+    var textObjects: [TextObject] = []
 
     private static let penStyleDefaultsKey = "com.shareddrawing.selectedPenStyle"
 
@@ -28,7 +29,8 @@ class CanvasViewModel {
     private let authService: AuthService
     private var strokeListenerTask: Task<Void, Never>?
     private var backgroundImageListenerTask: Task<Void, Never>?
-    private var undoStack = Stack<Stroke>()
+    private var textObjectListenerTask: Task<Void, Never>?
+    private var undoStack = Stack<UndoableAction>()
     private var lastClearedStrokes: [Stroke]?
 
     init(canvasId: String, repository: CanvasRepository, authService: AuthService) {
@@ -43,8 +45,10 @@ class CanvasViewModel {
     func switchToCanvas(_ newCanvasId: String) {
         strokeListenerTask?.cancel()
         backgroundImageListenerTask?.cancel()
+        textObjectListenerTask?.cancel()
         canvasId = newCanvasId
         strokes = []
+        textObjects = []
         backgroundImageUrl = nil
         imageSize = nil
         resetTransform()
@@ -151,6 +155,26 @@ class CanvasViewModel {
                 }
             }
         }
+
+        // Listen to real-time text object updates via AsyncStream
+        textObjectListenerTask = Task {
+            for await event in repository.listenToTextObjects(canvasId: canvasId) {
+                switch event {
+                case .added(let textObject):
+                    logger.info("Text object added: \(textObject.id) - \(textObject.text)")
+                    textObjects.append(textObject)
+                case .updated(let textObject):
+                    logger.info("Text object updated: \(textObject.id)")
+                    if let index = textObjects.firstIndex(where: { $0.id == textObject.id }) {
+                        textObjects[index] = textObject
+                    }
+                case .removed(let textObjectId):
+                    logger.info("Text object removed: \(textObjectId)")
+                    textObjects.removeAll { $0.id == textObjectId }
+                }
+            }
+        }
+
     }
 
     func addStrokePoint(_ point: CGPoint, to stroke: inout Stroke) {
@@ -181,9 +205,18 @@ class CanvasViewModel {
         finalStroke.isComplete = true
         do {
             try await repository.addStroke(finalStroke, to: canvasId)
-            undoStack.push(finalStroke)
+            undoStack.push(.stroke(finalStroke))
         } catch {
             logger.error("Error submitting stroke: \(error)")
+        }
+    }
+
+    func submitTextObject(_ textObject: TextObject) async {
+        do {
+            try await repository.addTextObject(textObject, to: canvasId)
+            undoStack.push(.textObject(textObject))
+        } catch {
+            logger.error("Error submitting text object: \(error)")
         }
     }
 
@@ -197,11 +230,20 @@ class CanvasViewModel {
                     logger.error("Error undoing clear: \(error)")
                 }
             }
-        } else if let stroke = undoStack.pop() {
-            do {
-                try await repository.removeStroke(id: stroke.id, from: canvasId)
-            } catch {
-                logger.error("Error undoing stroke: \(error)")
+        } else if let action = undoStack.pop() {
+            switch action {
+            case .stroke(let stroke):
+                do {
+                    try await repository.removeStroke(id: stroke.id, from: canvasId)
+                } catch {
+                    logger.error("Error undoing stroke: \(error)")
+                }
+            case .textObject(let textObject):
+                do {
+                    try await repository.removeTextObject(id: textObject.id, from: canvasId)
+                } catch {
+                    logger.error("Error undoing text object: \(error)")
+                }
             }
         }
     }
@@ -230,6 +272,7 @@ class CanvasViewModel {
         }
         logger.info("Background image URL updated: \(imageUrl)")
     }
+
 
     deinit {
         strokeListenerTask?.cancel()

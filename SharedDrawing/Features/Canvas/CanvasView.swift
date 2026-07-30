@@ -21,6 +21,11 @@ struct CanvasView: View {
     @State private var showSignInPrompt = false
     @State private var signInErrorMessage: String? = nil
     @State private var showSignInError = false
+    @State private var isAMode = false
+    @State private var aModeStrokes: [Stroke] = []
+    @State private var pointerTouchStartPoint: CGPoint?
+    @State private var pointerTouchStartTime: Date?
+    private let recognizer = HandwritingRecognizer()
 
     @Binding var canvasId: String
     let repository: CanvasRepository
@@ -43,13 +48,73 @@ struct CanvasView: View {
         VStack(spacing: 0) {
             // Canvas ID header with Undo/Pan/Share buttons
             HStack(spacing: 8) {
-                Button(action: {
-                    Task { await viewModel.undo() }
-                }) {
-                    Image(systemName: "arrow.uturn.backward")
-                        .font(.system(size: 14))
+                if isAMode {
+                    Button(action: {
+                        Task {
+                            do {
+                                let text = try await recognizer.recognizeText(from: aModeStrokes)
+                                if let recognizedText = text, !recognizedText.isEmpty {
+                                    // Calculate bounding box of strokes
+                                    var minX = Double.infinity, maxX = -Double.infinity
+                                    var minY = Double.infinity, maxY = -Double.infinity
+                                    for stroke in aModeStrokes {
+                                        for point in stroke.points {
+                                            minX = min(minX, point.x)
+                                            maxX = max(maxX, point.x)
+                                            minY = min(minY, point.y)
+                                            maxY = max(maxY, point.y)
+                                        }
+                                    }
+
+                                    let textObject = TextObject(
+                                        id: UUID().uuidString,
+                                        userId: authService.currentUserID ?? "anonymous",
+                                        text: recognizedText,
+                                        x: (minX + maxX) / 2,
+                                        y: (minY + maxY) / 2,
+                                        color: viewModel.currentColor,
+                                        fontSize: 24,
+                                        isComplete: true,
+                                        createdAt: Date().timeIntervalSince1970
+                                    )
+                                    await viewModel.submitTextObject(textObject)
+                                    logger.info("Recognized text: \(recognizedText)")
+                                } else {
+                                    // Fall back to strokes if no recognition
+                                    for stroke in aModeStrokes {
+                                        await viewModel.submitStroke(stroke)
+                                    }
+                                    logger.info("No text recognized, submitted as \(aModeStrokes.count) strokes")
+                                }
+                                aModeStrokes = []
+                                isAMode = false
+                            } catch {
+                                logger.error("Handwriting recognition error: \(error)")
+                                aModeStrokes = []
+                                isAMode = false
+                            }
+                        }
+                    }) {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 14))
+                    }
+
+                    Button(action: {
+                        aModeStrokes = []
+                        isAMode = false
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14))
+                    }
+                } else {
+                    Button(action: {
+                        Task { await viewModel.undo() }
+                    }) {
+                        Image(systemName: "arrow.uturn.backward")
+                            .font(.system(size: 14))
+                    }
+                    .disabled(!viewModel.canUndo)
                 }
-                .disabled(!viewModel.canUndo)
 
                 if viewModel.zoomScale != 1.0 || viewModel.rotationAngle != 0.0 {
                     Button(action: {
@@ -190,9 +255,14 @@ struct CanvasView: View {
                             renderStroke(stroke, in: &context)
                         }
 
+                        for stroke in aModeStrokes {
+                            renderStroke(stroke, in: &context)
+                        }
+
                         if let current = currentStroke {
                             renderStroke(current, in: &context)
                         }
+
                     }
                     .coordinateSpace(.named("canvas"))
                     .onGeometryChange(for: CGSize.self, of: { $0.size }) { newSize in
@@ -205,8 +275,13 @@ struct CanvasView: View {
                         guard !points.isEmpty else { return }
 
                         if isPointerMode {
-                            // In pointer mode, use drag to pan
+                            // In pointer mode, use drag to pan or tap to edit text
                             guard let currentPoint = points.last else { return }
+
+                            if pointerTouchStartPoint == nil {
+                                pointerTouchStartPoint = currentPoint
+                                pointerTouchStartTime = Date()
+                            }
 
                             if lastPointerPosition != .zero {
                                 let delta = CGPoint(
@@ -217,8 +292,24 @@ struct CanvasView: View {
                                 viewModel.pan(screenDelta: delta, fitScale: fitScale)
                             }
                             lastPointerPosition = currentPoint
+                        } else if isAMode {
+                            // In A mode, collect strokes for handwriting recognition
+                            let adjustedPoints = points.map { screenToWorld($0) }
+
+                            if !isDrawing {
+                                logger.debug("Starting new A mode stroke")
+                                isDrawing = true
+                                currentStroke = viewModel.startStroke(at: adjustedPoints.first ?? .zero)
+                            }
+
+                            if var stroke = currentStroke {
+                                for point in adjustedPoints {
+                                    viewModel.addStrokePoint(point, to: &stroke)
+                                }
+                                currentStroke = stroke
+                            }
                         } else {
-                            // In pen mode, draw strokes
+                            // In pen mode, draw strokes normally
                             logger.debug("Touch: \(points.count) points, isDrawing=\(isDrawing)")
 
                             // Convert screen coordinates to world coordinates
@@ -254,6 +345,20 @@ struct CanvasView: View {
                         if isPointerMode {
                             // Reset pointer tracking
                             lastPointerPosition = .zero
+                            pointerTouchStartPoint = nil
+                            pointerTouchStartTime = nil
+                        } else if isAMode {
+                            logger.debug("A mode stroke ended, collecting \(currentStroke?.points.count ?? 0) points")
+                            guard let stroke = currentStroke else { return }
+                            guard stroke.points.count >= 2 else {
+                                logger.warning("Ignoring single-point A mode stroke")
+                                currentStroke = nil
+                                isDrawing = false
+                                return
+                            }
+                            aModeStrokes.append(stroke)
+                            currentStroke = nil
+                            isDrawing = false
                         } else {
                             logger.debug("Stroke ended, submitting \(currentStroke?.points.count ?? 0) points")
                             guard let stroke = currentStroke else { return }
@@ -272,12 +377,24 @@ struct CanvasView: View {
                             }
                         }
                     }
-                )
+                    )
+
+                // Text objects overlay
+                ForEach(viewModel.textObjects) { textObject in
+                    let worldPosition = CGPoint(x: textObject.x, y: textObject.y)
+                    let screenPosition = worldToScreen(worldPosition)
+
+                    Text(textObject.text)
+                        .font(.system(size: textObject.fontSize))
+                        .foregroundColor(Color(hex: textObject.color))
+                        .position(screenPosition)
+                }
 
                 ColorPalettePicker(
                     selectedColor: $viewModel.currentColor,
                     selectedPenStyle: $viewModel.selectedPenStyle,
                     isPointerMode: $isPointerMode,
+                    isAMode: $isAMode,
                     onImagePickerTapped: { handleAddImageTapped() },
                     onClearTapped: { clearAllStrokes() }
                 )
@@ -370,9 +487,43 @@ struct CanvasView: View {
         )
     }
 
+    private func worldToScreen(_ worldPoint: CGPoint) -> CGPoint {
+        // Convert world coordinate to screen coordinate accounting for transform
+        let worldSize = viewModel.worldSize(fallback: canvasSize)
+        let fitScale = viewModel.fitScale(canvasSize: canvasSize)
+        let screenCenter = CGPoint(x: canvasSize.width / 2, y: canvasSize.height / 2)
+        let imageCenterOffset = CGPoint(x: -worldSize.width / 2, y: -worldSize.height / 2)
+        let scale = viewModel.zoomScale * gestureZoom * fitScale
+        let rotation = viewModel.rotationAngle + gestureRotation
+
+        // Apply viewport offset and image center offset
+        let point = CGPoint(
+            x: worldPoint.x + imageCenterOffset.x + viewModel.viewportOffset.x,
+            y: worldPoint.y + imageCenterOffset.y + viewModel.viewportOffset.y
+        )
+
+        // Apply rotation
+        let cos = cos(rotation)
+        let sin = sin(rotation)
+        let rotatedX = point.x * cos - point.y * sin
+        let rotatedY = point.x * sin + point.y * cos
+
+        // Apply scale
+        let scaledX = rotatedX * scale
+        let scaledY = rotatedY * scale
+
+        // Translate to screen center
+        return CGPoint(
+            x: scaledX + screenCenter.x,
+            y: scaledY + screenCenter.y
+        )
+    }
+
     private func clearAllStrokes() {
         Task {
             viewModel.recordClear(viewModel.strokes)
+
+            // Clear all strokes
             for stroke in viewModel.strokes {
                 do {
                     try await repository.removeStroke(id: stroke.id, from: canvasId)
@@ -382,13 +533,23 @@ struct CanvasView: View {
             }
             viewModel.strokes = []
 
+            // Clear all text objects
+            for textObject in viewModel.textObjects {
+                do {
+                    try await repository.removeTextObject(id: textObject.id, from: canvasId)
+                } catch {
+                    logger.error("Error clearing text object: \(error)")
+                }
+            }
+            viewModel.textObjects = []
+
             // Also clear background image
             do {
                 try await repository.removeBackgroundImage(for: canvasId)
                 viewModel.backgroundImageUrl = nil
                 viewModel.imageSize = nil
                 backgroundImage = nil
-                logger.info("Canvas and background image cleared")
+                logger.info("Canvas, text objects, and background image cleared")
             } catch {
                 logger.error("Error clearing background image: \(error)")
             }

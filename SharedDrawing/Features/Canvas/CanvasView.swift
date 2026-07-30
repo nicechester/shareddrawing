@@ -1,4 +1,7 @@
 import SwiftUI
+import os.log
+
+private let logger = Logger(subsystem: "io.github.nicechester.shareddrawing", category: "CanvasView")
 import Observation
 
 struct CanvasView: View {
@@ -107,13 +110,13 @@ struct CanvasView: View {
                 Task {
                     do {
                         guard let jpegData = newImage.jpegData(compressionQuality: 0.8) else {
-                            print("❌ Failed to compress image")
+                            logger.error("Failed to compress image")
                             return
                         }
 
                         // Upload to GCS and get signed URL
                         guard let serviceAccount = ServiceAccountLoader.loadKey() else {
-                            print("❌ Service account key not found")
+                            logger.error("Service account key not found")
                             return
                         }
 
@@ -128,9 +131,9 @@ struct CanvasView: View {
                         let width = Double(newImage.size.width)
                         let height = Double(newImage.size.height)
                         try await viewModel.updateBackgroundImage(signedURL, width: width, height: height)
-                        print("✅ Background image uploaded and stored: \(signedURL)")
+                        logger.info("Background image uploaded and stored: \(signedURL)")
                     } catch {
-                        print("❌ Error uploading image: \(error)")
+                        logger.error("Error uploading image: \(error)")
                     }
                 }
             }
@@ -142,7 +145,7 @@ struct CanvasView: View {
                             if let uiImage = UIImage(data: data) {
                                 DispatchQueue.main.async {
                                     self.backgroundImage = uiImage
-                                    print("✅ Background image loaded from URL")
+                                    logger.info("Background image loaded from URL")
                                 }
                                 // Backfill dimensions if not already set
                                 let width = Double(uiImage.size.width)
@@ -150,13 +153,13 @@ struct CanvasView: View {
                                 await viewModel.backfillImageDimensionsIfNeeded(width: width, height: height)
                             }
                         } catch {
-                            print("❌ Failed to load background image from URL: \(error)")
+                            logger.error("Failed to load background image from URL: \(error)")
                         }
                     }
                 } else {
                     // URL was cleared, remove background image
                     backgroundImage = nil
-                    print("✅ Background image cleared")
+                    logger.info("Background image cleared")
                 }
             }
 
@@ -216,13 +219,13 @@ struct CanvasView: View {
                             lastPointerPosition = currentPoint
                         } else {
                             // In pen mode, draw strokes
-                            print("📍 Touch: \(points.count) points, isDrawing=\(isDrawing)")
+                            logger.debug("Touch: \(points.count) points, isDrawing=\(isDrawing)")
 
                             // Convert screen coordinates to world coordinates
                             let adjustedPoints = points.map { screenToWorld($0) }
 
                             if !isDrawing {
-                                print("🎨 Starting new stroke")
+                                logger.debug("Starting new stroke")
                                 isDrawing = true
                                 currentStroke = viewModel.startStroke(at: adjustedPoints.first ?? .zero)
                             }
@@ -240,7 +243,7 @@ struct CanvasView: View {
                                         do {
                                             try await viewModel.repository.updateStroke(stroke, in: canvasId)
                                         } catch {
-                                            print("❌ Error updating stroke: \(error)")
+                                            logger.error("Error updating stroke: \(error)")
                                         }
                                     }
                                 }
@@ -252,10 +255,10 @@ struct CanvasView: View {
                             // Reset pointer tracking
                             lastPointerPosition = .zero
                         } else {
-                            print("✋ Stroke ended, submitting \(currentStroke?.points.count ?? 0) points")
+                            logger.debug("Stroke ended, submitting \(currentStroke?.points.count ?? 0) points")
                             guard let stroke = currentStroke else { return }
                             guard stroke.points.count >= 2 else {
-                                print("⚠️ Ignoring single-point stroke")
+                                logger.warning("Ignoring single-point stroke")
                                 currentStroke = nil
                                 isDrawing = false
                                 return
@@ -265,7 +268,7 @@ struct CanvasView: View {
                             isDrawing = false
                             Task {
                                 await viewModel.submitStroke(endedStroke)
-                                print("✅ Stroke submitted")
+                                logger.info("Stroke submitted")
                             }
                         }
                     }
@@ -374,7 +377,7 @@ struct CanvasView: View {
                 do {
                     try await repository.removeStroke(id: stroke.id, from: canvasId)
                 } catch {
-                    print("❌ Error clearing stroke: \(error)")
+                    logger.error("Error clearing stroke: \(error)")
                 }
             }
             viewModel.strokes = []
@@ -385,9 +388,9 @@ struct CanvasView: View {
                 viewModel.backgroundImageUrl = nil
                 viewModel.imageSize = nil
                 backgroundImage = nil
-                print("✅ Canvas and background image cleared")
+                logger.info("Canvas and background image cleared")
             } catch {
-                print("❌ Error clearing background image: \(error)")
+                logger.error("Error clearing background image: \(error)")
             }
         }
     }

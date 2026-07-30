@@ -1,4 +1,7 @@
 import SwiftUI
+import os.log
+
+private let logger = Logger(subsystem: "io.github.nicechester.shareddrawing", category: "App")
 import Firebase
 import GoogleSignIn
 
@@ -28,15 +31,15 @@ struct SharedDrawingApp: App {
                 }
             }
             .onOpenURL { url in
-                print("🔗 Received URL:", url.absoluteString)
+                logger.debug("Received URL: \(url.absoluteString)")
                 if GIDSignIn.sharedInstance.handle(url) {
                     return
                 }
                 if let canvasId = url.queryItemValue(for: "id") {
-                    print("🎯 Parsed Canvas ID:", canvasId)
+                    logger.info("Parsed Canvas ID: \(canvasId)")
                     deepLinkCanvasId = canvasId
                 } else {
-                    print("⚠️ Could not parse 'id' parameter from:", url)
+                    logger.warning("Could not parse 'id' parameter from: \(url)")
                 }
             }
         }

@@ -1,5 +1,8 @@
 import Foundation
 import Observation
+import os.log
+
+private let logger = Logger(subsystem: "io.github.nicechester.shareddrawing", category: "Canvas")
 
 @Observable
 class CanvasViewModel {
@@ -111,9 +114,9 @@ class CanvasViewModel {
                     if url != backgroundImageUrl {
                         backgroundImageUrl = url
                         if let url = url {
-                            print("📸 Loaded background image URL: \(url)")
+                            logger.debug("Loaded background image URL: \(url)")
                         } else {
-                            print("📸 Background image cleared")
+                            logger.debug("Background image cleared")
                         }
                     }
 
@@ -121,11 +124,11 @@ class CanvasViewModel {
                     if let dimensions = try await repository.getBackgroundImageDimensions(for: canvasId) {
                         if imageSize != dimensions {
                             imageSize = dimensions
-                            print("📐 Loaded image dimensions: \(dimensions)")
+                            logger.debug("Loaded image dimensions: \(dimensions.width)x\(dimensions.height)")
                         }
                     }
                 } catch {
-                    print("⚠️ Failed to load background image metadata: \(error)")
+                    logger.warning("Failed to load background image metadata: \(error)")
                 }
 
                 // Check for updates every 2 seconds
@@ -180,7 +183,7 @@ class CanvasViewModel {
             try await repository.addStroke(finalStroke, to: canvasId)
             undoStack.push(finalStroke)
         } catch {
-            print("Error submitting stroke: \(error)")
+            logger.error("Error submitting stroke: \(error)")
         }
     }
 
@@ -191,14 +194,14 @@ class CanvasViewModel {
                 do {
                     try await repository.addStroke(stroke, to: canvasId)
                 } catch {
-                    print("❌ Error undoing clear: \(error)")
+                    logger.error("Error undoing clear: \(error)")
                 }
             }
         } else if let stroke = undoStack.pop() {
             do {
                 try await repository.removeStroke(id: stroke.id, from: canvasId)
             } catch {
-                print("❌ Error undoing stroke: \(error)")
+                logger.error("Error undoing stroke: \(error)")
             }
         }
     }
@@ -225,7 +228,7 @@ class CanvasViewModel {
         if let width = width, let height = height {
             self.imageSize = CGSize(width: width, height: height)
         }
-        print("✅ Background image URL updated: \(imageUrl)")
+        logger.info("Background image URL updated: \(imageUrl)")
     }
 
     deinit {

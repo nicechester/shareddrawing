@@ -1,5 +1,8 @@
 import Foundation
 import FirebaseDatabase
+import os.log
+
+private let logger = Logger(subsystem: "io.github.nicechester.shareddrawing", category: "Firebase")
 
 class FirebaseCanvasRepository: CanvasRepository {
     private let database: DatabaseReference
@@ -42,9 +45,9 @@ class FirebaseCanvasRepository: CanvasRepository {
     func addStroke(_ stroke: Stroke, to canvasId: String) async throws {
         let strokeRef = database.child("v2/canvases").child(canvasId).child("strokes").child(stroke.id)
         let strokeData = try encodedStrokeData(stroke)
-        print("📤 Adding stroke \(stroke.id) to canvas \(canvasId): \(strokeData.count) fields")
+        logger.debug("Adding stroke \(stroke.id) to canvas \(canvasId): \(strokeData.count) fields")
         try await strokeRef.setValue(strokeData)
-        print("✅ Stroke \(stroke.id) added successfully")
+        logger.debug("Stroke \(stroke.id) added successfully")
 
         // Update canvas lastActivityAt for retention policy
         let metaRef = database.child("v2/canvases").child(canvasId).child("meta").child("lastActivityAt")
@@ -54,7 +57,7 @@ class FirebaseCanvasRepository: CanvasRepository {
     func updateStroke(_ stroke: Stroke, in canvasId: String) async throws {
         let strokeRef = database.child("v2/canvases").child(canvasId).child("strokes").child(stroke.id)
         let strokeData = try encodedStrokeData(stroke)
-        print("📤 Updating stroke \(stroke.id) in canvas \(canvasId): \(stroke.points.count) points")
+        logger.debug("Updating stroke \(stroke.id) in canvas \(canvasId): \(stroke.points.count) points")
         try await strokeRef.updateChildValues(strokeData)
     }
 
@@ -122,7 +125,7 @@ class FirebaseCanvasRepository: CanvasRepository {
             "uploaderEmail": NSNull(),
             "uploadedAt": NSNull()
         ])
-        print("🗑️ Dropped backgroundImageUrl, imageWidth, imageHeight, and uploader fields for canvas \(canvasId)")
+        logger.debug("Dropped backgroundImageUrl, imageWidth, imageHeight, and uploader fields for canvas \(canvasId)")
     }
 
     // MARK: - Private Helpers

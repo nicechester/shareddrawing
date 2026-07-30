@@ -89,6 +89,7 @@ struct ColorPalettePicker: View {
                 ForEach(["#000000", "#FF3B30", "#00C7BE", "#FFCC00", "#5856D6"], id: \.self) { color in
                     Button(action: {
                         selectedColor = color
+                        isPointerMode = false
                         isExpanded = false
                     }) {
                         Circle()

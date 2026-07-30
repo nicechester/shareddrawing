@@ -13,6 +13,13 @@ class CanvasViewModel {
     var rotationAngle: Double = 0.0  // Radians
     var canUndo: Bool { !undoStack.isEmpty || lastClearedStrokes != nil }
     var isAnonymous: Bool { authService.isAnonymous }
+    var selectedPenStyle: PenStyle {
+        didSet {
+            UserDefaults.standard.set(selectedPenStyle.rawValue, forKey: Self.penStyleDefaultsKey)
+        }
+    }
+
+    private static let penStyleDefaultsKey = "com.shareddrawing.selectedPenStyle"
 
     let repository: CanvasRepository
     private let authService: AuthService
@@ -25,6 +32,8 @@ class CanvasViewModel {
         self.canvasId = canvasId
         self.repository = repository
         self.authService = authService
+        let savedRaw = UserDefaults.standard.string(forKey: Self.penStyleDefaultsKey)
+        self.selectedPenStyle = savedRaw.flatMap(PenStyle.init(rawValue:)) ?? .default
         setupStrokeListener()
     }
 
@@ -156,10 +165,11 @@ class CanvasViewModel {
             id: UUID().uuidString,
             userId: authService.currentUserID ?? "anonymous",
             color: currentColor,
-            width: 2.0,
+            width: selectedPenStyle.baseWidth,
             points: [StrokePoint(x: Double(point.x), y: Double(point.y), t: 0)],
             isComplete: false,
-            createdAt: now
+            createdAt: now,
+            style: selectedPenStyle.rawValue
         )
     }
 

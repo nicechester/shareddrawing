@@ -8,4 +8,5 @@ struct Stroke: Identifiable, Codable {
     var points: [StrokePoint]
     var isComplete: Bool
     let createdAt: TimeInterval
+    let style: String
 }

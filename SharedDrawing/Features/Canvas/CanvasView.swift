@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 
 struct CanvasView: View {
     @State private var viewModel: CanvasViewModel
@@ -6,8 +7,6 @@ struct CanvasView: View {
     @State private var isDrawing = false
     @State private var lastUpdateTime: Date?
     @State private var showCanvasIDSheet = false
-    @State private var showClearConfirmation = false
-    @State private var isPaletteCollapsed = false
     @State private var showImagePicker = false
     @State private var selectedImage: UIImage?
     @State private var backgroundImage: UIImage?
@@ -58,13 +57,6 @@ struct CanvasView: View {
                     }
                 }
 
-                // Pointer/Pen toggle
-                Button(action: { isPointerMode.toggle() }) {
-                    Image(systemName: isPointerMode ? "hand.point.up.fill" : "pencil")
-                        .font(.system(size: 14))
-                        .foregroundColor(isPointerMode ? .blue : .primary)
-                }
-
                 if !viewModel.isAnonymous {
                     Button(action: { Task { try? await authService.signOut() } }) {
                         Image(systemName: "person.crop.circle.badge.minus")
@@ -93,14 +85,6 @@ struct CanvasView: View {
                     Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 14))
                 }
-
-                Button(action: {
-                    showClearConfirmation = true
-                }) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 14))
-                        .foregroundColor(.red)
-                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -113,14 +97,6 @@ struct CanvasView: View {
                     canvasId: $canvasId,
                     isPresented: $showCanvasIDSheet
                 )
-            }
-            .alert("Clear All Strokes?", isPresented: $showClearConfirmation) {
-                Button("Cancel", role: .cancel) { }
-                Button("Clear", role: .destructive) {
-                    clearAllStrokes()
-                }
-            } message: {
-                Text("This will permanently delete all drawings on this canvas. This action cannot be undone.")
             }
             .sheet(isPresented: $showImagePicker) {
                 ImagePicker(isPresented: $showImagePicker, selectedImage: $selectedImage)
@@ -295,35 +271,15 @@ struct CanvasView: View {
                     }
                 )
 
-                // Floating color palette (top-left)
-                VStack(spacing: 12) {
-                    Button(action: { isPaletteCollapsed.toggle() }) {
-                        Text(isPaletteCollapsed ? "v" : "^")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.gray)
-                            .frame(width: 24, height: 24)
-                    }
-
-                    if !isPaletteCollapsed {
-                        ColorPalettePicker(
-                            selectedColor: $viewModel.currentColor,
-                            vertical: true,
-                            onImagePickerTapped: { handleAddImageTapped() }
-                        )
-                    } else {
-                        Circle()
-                            .fill(Color(hex: viewModel.currentColor))
-                            .frame(width: 32, height: 32)
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.white, lineWidth: 2)
-                            )
-                    }
-                }
+                ColorPalettePicker(
+                    selectedColor: $viewModel.currentColor,
+                    selectedPenStyle: $viewModel.selectedPenStyle,
+                    isPointerMode: $isPointerMode,
+                    onImagePickerTapped: { handleAddImageTapped() },
+                    onClearTapped: { clearAllStrokes() }
+                )
                 .padding(.horizontal, 8)
                 .padding(.vertical, 12)
-                .background(Color(.systemGray6))
-                .cornerRadius(8)
             }
             .gesture(
                 SimultaneousGesture(
@@ -438,22 +394,37 @@ struct CanvasView: View {
 
     private func renderStroke(_ stroke: Stroke, in context: inout GraphicsContext) {
         guard stroke.points.count > 1 else { return }
+        let style = PenStyle(rawValue: stroke.style) ?? .default
+        let color = Color(hex: stroke.color)
+        context.applyPenStyle(style)
+
+        if style == .calligraphy {
+            renderCalligraphyStroke(stroke, style: style, color: color, in: &context)
+            return
+        }
 
         var path = Path()
-        let firstPoint = stroke.points[0]
-        path.move(to: CGPoint(x: firstPoint.x, y: firstPoint.y))
-
+        path.move(to: CGPoint(x: stroke.points[0].x, y: stroke.points[0].y))
         for point in stroke.points.dropFirst() {
             path.addLine(to: CGPoint(x: point.x, y: point.y))
         }
+        context.stroke(path, with: .color(color), lineWidth: style.baseWidth)
+    }
 
-        // context.transform is already applied, no need to transform path
-        let color = Color(hex: stroke.color)
-        context.stroke(
-            path,
-            with: .color(color),
-            lineWidth: stroke.width
-        )
+    private func renderCalligraphyStroke(_ stroke: Stroke, style: PenStyle, color: Color, in context: inout GraphicsContext) {
+        let nibAngle = Double.pi / 4
+        let points = stroke.points
+        for i in 0..<(points.count - 1) {
+            let p0 = CGPoint(x: points[i].x, y: points[i].y)
+            let p1 = CGPoint(x: points[i + 1].x, y: points[i + 1].y)
+            let segmentAngle = atan2(p1.y - p0.y, p1.x - p0.x)
+            let widthFactor = abs(cos(segmentAngle - nibAngle))
+            let width = style.minWidth + (style.maxWidth - style.minWidth) * widthFactor
+            var segmentPath = Path()
+            segmentPath.move(to: p0)
+            segmentPath.addLine(to: p1)
+            context.stroke(segmentPath, with: .color(color), lineWidth: width)
+        }
     }
 
     private func handleAddImageTapped() {
@@ -545,5 +516,12 @@ extension Color {
         let blue = Double(rgb & 0xFF) / 255.0
 
         self.init(red: red, green: green, blue: blue)
+    }
+}
+
+extension GraphicsContext {
+    mutating func applyPenStyle(_ style: PenStyle) {
+        opacity = style.opacity
+        blendMode = style.usesScreenBlend ? .screen : .normal
     }
 }

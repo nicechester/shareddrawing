@@ -151,6 +151,7 @@ class FirebaseCanvasRepository: CanvasRepository {
             }
         }
 
+        let style = dict["style"] as? String ?? PenStyle.default.rawValue
         return Stroke(
             id: id,
             userId: userId,
@@ -158,7 +159,8 @@ class FirebaseCanvasRepository: CanvasRepository {
             width: width,
             points: points,
             isComplete: isComplete,
-            createdAt: createdAt
+            createdAt: createdAt,
+            style: style
         )
     }
 
@@ -173,7 +175,8 @@ class FirebaseCanvasRepository: CanvasRepository {
             "width": stroke.width,
             "points": pointsData,
             "isComplete": stroke.isComplete,
-            "createdAt": stroke.createdAt
+            "createdAt": stroke.createdAt,
+            "style": stroke.style
         ]
     }
 }

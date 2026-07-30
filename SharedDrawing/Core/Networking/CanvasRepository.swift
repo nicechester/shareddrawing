@@ -6,6 +6,12 @@ enum StrokeEvent {
     case removed(String)  // stroke ID
 }
 
+enum TextObjectEvent {
+    case added(TextObject)
+    case updated(TextObject)
+    case removed(String)
+}
+
 protocol CanvasRepository {
     func listenToStrokes(canvasId: String) -> AsyncStream<StrokeEvent>
     func addStroke(_ stroke: Stroke, to canvasId: String) async throws
@@ -24,4 +30,8 @@ protocol CanvasRepository {
     func getBackgroundImageDimensions(for canvasId: String) async throws -> CGSize?
     func updateBackgroundImageDimensions(width: Double, height: Double, for canvasId: String) async throws
     func removeBackgroundImage(for canvasId: String) async throws
+    func listenToTextObjects(canvasId: String) -> AsyncStream<TextObjectEvent>
+    func addTextObject(_ textObject: TextObject, to canvasId: String) async throws
+    func updateTextObject(_ textObject: TextObject, in canvasId: String) async throws
+    func removeTextObject(id: String, from canvasId: String) async throws
 }

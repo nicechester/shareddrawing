@@ -182,4 +182,89 @@ class FirebaseCanvasRepository: CanvasRepository {
             "style": stroke.style
         ]
     }
+
+    func listenToTextObjects(canvasId: String) -> AsyncStream<TextObjectEvent> {
+        AsyncStream { continuation in
+            let textObjectsRef = database.child("v2/canvases").child(canvasId).child("textObjects")
+            var listener: UInt?
+
+            listener = textObjectsRef.observe(.childAdded) { [weak self] snapshot in
+                guard let textObject = self?.decodeTextObject(from: snapshot) else { return }
+                continuation.yield(.added(textObject))
+            } withCancel: { error in
+                continuation.finish()
+            }
+
+            textObjectsRef.observe(.childChanged) { [weak self] snapshot in
+                guard let textObject = self?.decodeTextObject(from: snapshot) else { return }
+                continuation.yield(.updated(textObject))
+            }
+
+            textObjectsRef.observe(.childRemoved) { snapshot in
+                let textObjectId = snapshot.key
+                continuation.yield(.removed(textObjectId))
+            }
+
+            continuation.onTermination = { _ in
+                if let listenerHandle = listener {
+                    textObjectsRef.removeObserver(withHandle: listenerHandle)
+                }
+                textObjectsRef.removeAllObservers()
+            }
+        }
+    }
+
+    func addTextObject(_ textObject: TextObject, to canvasId: String) async throws {
+        let textObjectRef = database.child("v2/canvases").child(canvasId).child("textObjects").child(textObject.id)
+        let textObjectData = try encodedTextObjectData(textObject)
+        logger.debug("Adding text object \(textObject.id) to canvas \(canvasId)")
+        try await textObjectRef.setValue(textObjectData)
+
+        let metaRef = database.child("v2/canvases").child(canvasId).child("meta").child("lastActivityAt")
+        try await metaRef.setValue(ServerValue.timestamp())
+    }
+
+    func updateTextObject(_ textObject: TextObject, in canvasId: String) async throws {
+        let textObjectRef = database.child("v2/canvases").child(canvasId).child("textObjects").child(textObject.id)
+        let textObjectData = try encodedTextObjectData(textObject)
+        logger.debug("Updating text object \(textObject.id) in canvas \(canvasId)")
+        try await textObjectRef.updateChildValues(textObjectData)
+    }
+
+    func removeTextObject(id: String, from canvasId: String) async throws {
+        let textObjectRef = database.child("v2/canvases").child(canvasId).child("textObjects").child(id)
+        logger.debug("Removing text object \(id) from canvas \(canvasId)")
+        try await textObjectRef.removeValue()
+    }
+
+    private func decodeTextObject(from snapshot: DataSnapshot) -> TextObject? {
+        guard let dict = snapshot.value as? [String: Any] else { return nil }
+
+        let id = snapshot.key
+        guard let userId = dict["userId"] as? String,
+              let text = dict["text"] as? String,
+              let x = dict["x"] as? Double,
+              let y = dict["y"] as? Double,
+              let color = dict["color"] as? String,
+              let fontSize = dict["fontSize"] as? Double,
+              let isComplete = dict["isComplete"] as? Bool,
+              let createdAt = dict["createdAt"] as? TimeInterval else {
+            return nil
+        }
+
+        return TextObject(id: id, userId: userId, text: text, x: x, y: y, color: color, fontSize: fontSize, isComplete: isComplete, createdAt: createdAt)
+    }
+
+    private func encodedTextObjectData(_ textObject: TextObject) throws -> [String: Any] {
+        return [
+            "userId": textObject.userId,
+            "text": textObject.text,
+            "x": textObject.x,
+            "y": textObject.y,
+            "color": textObject.color,
+            "fontSize": textObject.fontSize,
+            "isComplete": textObject.isComplete,
+            "createdAt": textObject.createdAt
+        ]
+    }
 }

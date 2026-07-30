@@ -1,5 +1,8 @@
 import Foundation
 import JWTKit
+import os.log
+
+private let logger = Logger(subsystem: "io.github.nicechester.shareddrawing", category: "GCS")
 
 struct GCSClaims: JWTPayload {
     var iss: IssuerClaim
@@ -30,7 +33,7 @@ class GCSImageUploader {
     func uploadImage(_ imageData: Data, canvasId: String, userId: String) async throws -> String {
         let fileName = "\(UUID().uuidString).jpg"
         let objectPath = "canvases/\(canvasId)/\(userId)/\(fileName)"
-        print("📤 Uploading image to GCS: \(objectPath)")
+        logger.debug("Uploading image to GCS: \(objectPath)")
 
         let accessToken = try await getAccessToken()
 
@@ -50,11 +53,11 @@ class GCSImageUploader {
         
         guard http.statusCode == 200 else {
             let errorBody = String(data: imageData.prefix(500), encoding: .utf8) ?? ""
-            print("❌ Upload failed: \(http.statusCode) \(errorBody)")
+            logger.error("Upload failed: \(http.statusCode) \(errorBody)")
             throw NSError(domain: "GCS", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: "Upload failed: \(http.statusCode)"])
         }
 
-        print("✅ Image uploaded: \(objectPath)")
+        logger.info("Image uploaded: \(objectPath)")
         return "https://storage.googleapis.com/\(bucket)/\(objectPath)"
     }
 
@@ -75,7 +78,7 @@ class GCSImageUploader {
         )
 
         let jwt = try await keys.sign(payload)
-        print("📝 JWT created, exchanging for access token...")
+        logger.debug("JWT created, exchanging for access token...")
 
         var req = URLRequest(url: URL(string: "https://oauth2.googleapis.com/token")!)
         req.httpMethod = "POST"
@@ -83,19 +86,19 @@ class GCSImageUploader {
         req.httpBody = "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=\(jwt)".data(using: .utf8)
 
         let (data, response) = try await URLSession.shared.data(for: req)
-        
+
         if let http = response as? HTTPURLResponse {
-            print("📊 Token response: \(http.statusCode)")
+            logger.debug("Token response: \(http.statusCode)")
         }
 
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
 
         guard let token = json?["access_token"] as? String else {
             let err = json?["error_description"] as? String ?? json?["error"] as? String ?? "Unknown"
-            print("❌ GCS error: \(err)")
+            logger.error("GCS error: \(err)")
             throw NSError(domain: "GCS", code: -1, userInfo: [NSLocalizedDescriptionKey: "Token error: \(err)"])
         }
-        print("✅ Access token obtained")
+        logger.info("Access token obtained")
         return token
     }
 }

@@ -1,4 +1,7 @@
 import Foundation
+import os.log
+
+private let logger = Logger(subsystem: "io.github.nicechester.shareddrawing", category: "ServiceAccount")
 
 struct ServiceAccountKey: Codable {
     let type: String
@@ -16,19 +19,19 @@ struct ServiceAccountKey: Codable {
 class ServiceAccountLoader {
     static func loadKey(from filename: String = "shared-drawing-7910b9b25a2d.json") -> ServiceAccountKey? {
         guard let path = Bundle.main.path(forResource: filename.replacingOccurrences(of: ".json", with: ""), ofType: "json") else {
-            print("⚠️ Service account key file not found: \(filename)")
+            logger.warning("Service account key file not found: \(filename)")
             return nil
         }
 
         guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)) else {
-            print("⚠️ Failed to read service account key file")
+            logger.warning("Failed to read service account key file")
             return nil
         }
 
         do {
             return try JSONDecoder().decode(ServiceAccountKey.self, from: data)
         } catch {
-            print("⚠️ Failed to decode service account key: \(error)")
+            logger.warning("Failed to decode service account key: \(error)")
             return nil
         }
     }

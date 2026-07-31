@@ -592,7 +592,7 @@ struct CanvasView: View {
     }
 
     private func handleAddImageTapped() {
-        if viewModel.isAnonymous {
+        if viewModel.isAnonymous && authService.currentUserEmail == nil {
             showSignInPrompt = true
         } else {
             showImagePicker = true

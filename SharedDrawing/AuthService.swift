@@ -34,6 +34,8 @@ class AuthService {
     var isAuthenticated: Bool { currentUserID != nil }
 
     private var authStateListener: AuthStateDidChangeListenerHandle?
+    private static let emailKey = "authServiceEmail"
+    private static let nameKey = "authServiceName"
 
     init() {
         setupAuthStateListener()
@@ -49,9 +51,8 @@ class AuthService {
         authStateListener = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             self?.currentUserID = user?.uid
             if let user = user {
-                self?.currentUserName = user.displayName
-                self?.currentUserEmail = user.email
-                // Check if user is anonymous
+                self?.currentUserName = user.displayName ?? UserDefaults.standard.string(forKey: Self.nameKey)
+                self?.currentUserEmail = user.email ?? UserDefaults.standard.string(forKey: Self.emailKey)
                 self?.isAnonymous = user.isAnonymous
             } else {
                 self?.currentUserName = nil
@@ -100,6 +101,7 @@ class AuthService {
                 currentUserID = anonUser.uid
                 currentUserName = result.user.profile?.givenName
                 currentUserEmail = result.user.profile?.email
+                persistUserData()
                 isAnonymous = false
             } catch let error as NSError where error.code == AuthErrorCode.credentialAlreadyInUse.rawValue {
                 // Credential already linked elsewhere, sign in normally
@@ -108,6 +110,7 @@ class AuthService {
                     currentUserID = firebaseUser.uid
                     currentUserName = firebaseUser.displayName
                     currentUserEmail = firebaseUser.email
+                    persistUserData()
                     isAnonymous = false
                 }
             }
@@ -118,6 +121,7 @@ class AuthService {
                 currentUserID = firebaseUser.uid
                 currentUserName = firebaseUser.displayName
                 currentUserEmail = firebaseUser.email
+                persistUserData()
                 isAnonymous = false
             }
         }
@@ -126,7 +130,18 @@ class AuthService {
     func signOut() async throws {
         GIDSignIn.sharedInstance.signOut()
         try Auth.auth().signOut()
+        UserDefaults.standard.removeObject(forKey: Self.emailKey)
+        UserDefaults.standard.removeObject(forKey: Self.nameKey)
         try await signInAnonymously()
+    }
+
+    private func persistUserData() {
+        if let email = currentUserEmail {
+            UserDefaults.standard.set(email, forKey: Self.emailKey)
+        }
+        if let name = currentUserName {
+            UserDefaults.standard.set(name, forKey: Self.nameKey)
+        }
     }
 
     static func topViewController() -> UIViewController? {

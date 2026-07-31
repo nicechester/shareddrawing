@@ -1,5 +1,5 @@
 {
-  "originHash" : "ec50f426d1493845e17ec6adf28b9e4af6dc5933c542f1abbcb4681a5e8cb2eb",
+  "originHash" : "e61e41469a54319ef0635a68f7394a5097f4b3a695eaa4c7d058b799e242c25a",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -44,15 +44,6 @@
       "state" : {
         "revision" : "dc39082d8881109d35b94b1c122164c0e8d08a55",
         "version" : "3.6.1"
-      }
-    },
-    {
-      "identity" : "google-mlkit-swiftpm",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/d-date/google-mlkit-swiftpm",
-      "state" : {
-        "revision" : "7aefa43c5105f28b9a8f9a48f7a115524a101186",
-        "version" : "9.0.0"
       }
     },
     {

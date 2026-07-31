@@ -25,6 +25,10 @@ struct CanvasView: View {
     @State private var aModeStrokes: [Stroke] = []
     @State private var pointerTouchStartPoint: CGPoint?
     @State private var pointerTouchStartTime: Date?
+    @State private var isEraserMode = false
+    @State private var eraserCursorPosition: CGPoint?
+    @State private var erasedStrokesThisGesture: [Stroke] = []
+    @State private var erasedTextObjectsThisGesture: [TextObject] = []
     private let recognizer = HandwritingRecognizer()
 
     @Binding var canvasId: String
@@ -292,6 +296,35 @@ struct CanvasView: View {
                                 viewModel.pan(screenDelta: delta, fitScale: fitScale)
                             }
                             lastPointerPosition = currentPoint
+                        } else if isEraserMode {
+                            // In eraser mode, erase intersecting strokes and text objects
+                            guard let currentPoint = points.last else { return }
+
+                            let worldPoint = screenToWorld(currentPoint)
+                            let fitScale = viewModel.fitScale(canvasSize: canvasSize)
+                            let eraserRadius = 22.0 / (viewModel.zoomScale * gestureZoom * fitScale)
+
+                            let hitStrokes = viewModel.strokesHit(
+                                at: worldPoint,
+                                radius: eraserRadius,
+                                excluding: Set(erasedStrokesThisGesture.map(\.id))
+                            )
+
+                            for stroke in hitStrokes {
+                                viewModel.eraseStrokesLocally([stroke])
+                                erasedStrokesThisGesture.append(stroke)
+                            }
+
+                            let hitTextObjects = viewModel.textObjectsHit(
+                                at: worldPoint,
+                                radius: eraserRadius,
+                                excluding: Set(erasedTextObjectsThisGesture.map(\.id))
+                            )
+
+                            for textObject in hitTextObjects {
+                                viewModel.eraseTextObjectsLocally([textObject])
+                                erasedTextObjectsThisGesture.append(textObject)
+                            }
                         } else if isAMode {
                             // In A mode, collect strokes for handwriting recognition
                             let adjustedPoints = points.map { screenToWorld($0) }
@@ -347,6 +380,26 @@ struct CanvasView: View {
                             lastPointerPosition = .zero
                             pointerTouchStartPoint = nil
                             pointerTouchStartTime = nil
+                        } else if isEraserMode {
+                            // Sync erased strokes and text objects to Firebase
+                            if !erasedStrokesThisGesture.isEmpty {
+                                Task {
+                                    try? await repository.removeStrokes(
+                                        ids: erasedStrokesThisGesture.map(\.id),
+                                        from: canvasId
+                                    )
+                                }
+                            }
+                            if !erasedTextObjectsThisGesture.isEmpty {
+                                Task {
+                                    try? await repository.removeTextObjects(
+                                        ids: erasedTextObjectsThisGesture.map(\.id),
+                                        from: canvasId
+                                    )
+                                }
+                            }
+                            erasedStrokesThisGesture = []
+                            erasedTextObjectsThisGesture = []
                         } else if isAMode {
                             logger.debug("A mode stroke ended, collecting \(currentStroke?.points.count ?? 0) points")
                             guard let stroke = currentStroke else { return }
@@ -395,6 +448,7 @@ struct CanvasView: View {
                     selectedPenStyle: $viewModel.selectedPenStyle,
                     isPointerMode: $isPointerMode,
                     isAMode: $isAMode,
+                    isEraserMode: $isEraserMode,
                     onImagePickerTapped: { handleAddImageTapped() },
                     onClearTapped: { clearAllStrokes() }
                 )

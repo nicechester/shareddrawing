@@ -5,6 +5,7 @@ struct ColorPalettePicker: View {
     @Binding var selectedPenStyle: PenStyle
     @Binding var isPointerMode: Bool
     @Binding var isAMode: Bool
+    @Binding var isEraserMode: Bool
     var onImagePickerTapped: (() -> Void)?
     var onClearTapped: () -> Void
 
@@ -39,12 +40,19 @@ struct ColorPalettePicker: View {
                 pointerCollapsedView
             } else if isAMode {
                 aCollapsedView
+            } else if isEraserMode {
+                eraserCollapsedView
             } else {
                 penCollapsedView
             }
         }
         .padding(8)
-        .accessibilityLabel(isPointerMode ? "Pointer mode — tap to expand palette" : isAMode ? "A mode — tap to expand palette" : "Expand palette")
+        .accessibilityLabel(
+            isPointerMode ? "Pointer mode — tap to expand palette" :
+            isAMode ? "A mode — tap to expand palette" :
+            isEraserMode ? "Eraser mode — tap to expand palette" :
+            "Expand palette"
+        )
     }
 
     private var pointerCollapsedView: some View {
@@ -63,6 +71,15 @@ struct ColorPalettePicker: View {
                 .foregroundColor(.white)
                 .frame(width: 40, height: 40)
                 .background(Circle().fill(Color.green))
+        }
+    }
+
+    private var eraserCollapsedView: some View {
+        Button(action: { isExpanded = true }) {
+            Image(systemName: "eraser")
+                .font(.system(size: 20))
+                .foregroundColor(.gray)
+                .frame(width: 40, height: 40)
         }
     }
 
@@ -104,6 +121,7 @@ struct ColorPalettePicker: View {
                         selectedColor = color
                         isPointerMode = false
                         isAMode = false
+                        isEraserMode = false
                         isExpanded = false
                     }) {
                         Circle()
@@ -125,7 +143,7 @@ struct ColorPalettePicker: View {
                     HStack {
                         Image(systemName: "pencil")
                         Text(selectedPenStyle.displayName)
-                        if !isPointerMode && !isAMode {
+                        if !isPointerMode && !isAMode && !isEraserMode {
                             Image(systemName: "checkmark")
                         }
                     }
@@ -141,6 +159,7 @@ struct ColorPalettePicker: View {
             .onTapGesture {
                 isPointerMode = false
                 isAMode = false
+                isEraserMode = false
                 isExpanded = false
             }
 
@@ -158,6 +177,7 @@ struct ColorPalettePicker: View {
             .onTapGesture {
                 isPointerMode = true
                 isAMode = false
+                isEraserMode = false
                 isExpanded = false
             }
 
@@ -176,6 +196,25 @@ struct ColorPalettePicker: View {
             .onTapGesture {
                 isPointerMode = false
                 isAMode = true
+                isEraserMode = false
+                isExpanded = false
+            }
+
+            // Eraser row
+            HStack {
+                Image(systemName: "eraser")
+                Text("Eraser")
+                if isEraserMode {
+                    Image(systemName: "checkmark")
+                }
+                Spacer()
+            }
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                isPointerMode = false
+                isAMode = false
+                isEraserMode = true
                 isExpanded = false
             }
 
@@ -226,6 +265,7 @@ struct ColorPalettePicker: View {
                 onSelect: {
                     isPointerMode = false
                     isAMode = false
+                    isEraserMode = false
                     showingStyleSubmenu = false
                     isExpanded = false
                 }

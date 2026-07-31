@@ -17,6 +17,7 @@ protocol CanvasRepository {
     func addStroke(_ stroke: Stroke, to canvasId: String) async throws
     func updateStroke(_ stroke: Stroke, in canvasId: String) async throws
     func removeStroke(id: String, from canvasId: String) async throws
+    func removeStrokes(ids: [String], from canvasId: String) async throws
     func updateBackgroundImageUrl(
         _ url: String,
         width: Double?,
@@ -34,4 +35,5 @@ protocol CanvasRepository {
     func addTextObject(_ textObject: TextObject, to canvasId: String) async throws
     func updateTextObject(_ textObject: TextObject, in canvasId: String) async throws
     func removeTextObject(id: String, from canvasId: String) async throws
+    func removeTextObjects(ids: [String], from canvasId: String) async throws
 }

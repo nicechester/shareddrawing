@@ -66,6 +66,15 @@ class FirebaseCanvasRepository: CanvasRepository {
         try await strokeRef.removeValue()
     }
 
+    func removeStrokes(ids: [String], from canvasId: String) async throws {
+        let strokesRef = database.child("v2/canvases").child(canvasId).child("strokes")
+        var updates: [String: Any] = [:]
+        for id in ids {
+            updates[id] = NSNull()
+        }
+        try await strokesRef.updateChildValues(updates)
+    }
+
     func updateBackgroundImageUrl(
         _ url: String,
         width: Double?,
@@ -235,6 +244,15 @@ class FirebaseCanvasRepository: CanvasRepository {
         let textObjectRef = database.child("v2/canvases").child(canvasId).child("textObjects").child(id)
         logger.debug("Removing text object \(id) from canvas \(canvasId)")
         try await textObjectRef.removeValue()
+    }
+
+    func removeTextObjects(ids: [String], from canvasId: String) async throws {
+        let textObjectsRef = database.child("v2/canvases").child(canvasId).child("textObjects")
+        var updates: [String: Any] = [:]
+        for id in ids {
+            updates[id] = NSNull()
+        }
+        try await textObjectsRef.updateChildValues(updates)
     }
 
     private func decodeTextObject(from snapshot: DataSnapshot) -> TextObject? {

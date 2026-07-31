@@ -32,6 +32,7 @@ class CanvasViewModel {
     private var textObjectListenerTask: Task<Void, Never>?
     private var undoStack = Stack<UndoableAction>()
     private var lastClearedStrokes: [Stroke]?
+    private var strokeBoundingBoxes: [String: CGRect] = [:]
 
     init(canvasId: String, repository: CanvasRepository, authService: AuthService) {
         self.canvasId = canvasId
@@ -146,12 +147,15 @@ class CanvasViewModel {
                 switch event {
                 case .added(let stroke):
                     strokes.append(stroke)
+                    strokeBoundingBoxes[stroke.id] = stroke.boundingBox
                 case .updated(let stroke):
                     if let index = strokes.firstIndex(where: { $0.id == stroke.id }) {
                         strokes[index] = stroke
+                        strokeBoundingBoxes[stroke.id] = stroke.boundingBox
                     }
                 case .removed(let strokeId):
                     strokes.removeAll { $0.id == strokeId }
+                    strokeBoundingBoxes.removeValue(forKey: strokeId)
                 }
             }
         }
@@ -273,6 +277,45 @@ class CanvasViewModel {
         logger.info("Background image URL updated: \(imageUrl)")
     }
 
+
+    /// Find all strokes that intersect a circular region, excluding specified stroke IDs
+    func strokesHit(at point: CGPoint, radius: Double, excluding: Set<String> = []) -> [Stroke] {
+        return strokes.filter { stroke in
+            guard !excluding.contains(stroke.id) else { return false }
+
+            // Quick bounding box check
+            guard let bbox = strokeBoundingBoxes[stroke.id] else { return false }
+            let expandedBbox = bbox.insetBy(dx: -radius, dy: -radius)
+            guard expandedBbox.contains(point) else { return false }
+
+            // Detailed distance check
+            let dist = stroke.minDistance(to: point)
+            return dist <= radius
+        }
+    }
+
+    /// Remove strokes locally (optimistic UI update), clearing bbox cache entries
+    func eraseStrokesLocally(_ strokesToRemove: [Stroke]) {
+        let idsToRemove = Set(strokesToRemove.map(\.id))
+        strokes.removeAll { idsToRemove.contains($0.id) }
+        for id in idsToRemove {
+            strokeBoundingBoxes.removeValue(forKey: id)
+        }
+    }
+
+    /// Find text objects that intersect with a circular eraser at the given point
+    func textObjectsHit(at point: CGPoint, radius: Double, excluding: Set<String> = []) -> [TextObject] {
+        return textObjects.filter { textObject in
+            guard !excluding.contains(textObject.id) else { return false }
+            return textObject.intersects(point: point, radius: radius)
+        }
+    }
+
+    /// Remove text objects locally (optimistic UI update)
+    func eraseTextObjectsLocally(_ textObjectsToRemove: [TextObject]) {
+        let idsToRemove = Set(textObjectsToRemove.map(\.id))
+        textObjects.removeAll { idsToRemove.contains($0.id) }
+    }
 
     deinit {
         strokeListenerTask?.cancel()

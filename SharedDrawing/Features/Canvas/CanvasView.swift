@@ -1,4 +1,5 @@
 import SwiftUI
+import FirebaseStorage
 import os.log
 
 private let logger = Logger(subsystem: "io.github.nicechester.shareddrawing", category: "CanvasView")
@@ -21,6 +22,7 @@ struct CanvasView: View {
     @State private var showSignInPrompt = false
     @State private var signInErrorMessage: String? = nil
     @State private var showSignInError = false
+    @State private var showDeleteAccountConfirm = false
     @State private var isAMode = false
     @State private var aModeStrokes: [Stroke] = []
     @State private var pointerTouchStartPoint: CGPoint?
@@ -135,6 +137,12 @@ struct CanvasView: View {
                             .font(.system(size: 14))
                     }
                     .accessibilityLabel("Sign out")
+
+                    Button(role: .destructive, action: { showDeleteAccountConfirm = true }) {
+                        Image(systemName: "person.crop.circle.badge.xmark")
+                            .font(.system(size: 14))
+                    }
+                    .accessibilityLabel("Delete account")
                 }
 
                 Button(action: {
@@ -183,24 +191,17 @@ struct CanvasView: View {
                             return
                         }
 
-                        // Upload to GCS and get signed URL
-                        guard let serviceAccount = ServiceAccountLoader.loadKey() else {
-                            logger.error("Service account key not found")
-                            return
-                        }
-
-                        let uploader = GCSImageUploader(
-                            bucket: "shared-drawing",
-                            serviceAccountEmail: serviceAccount.client_email,
-                            privateKeyPEM: serviceAccount.private_key,
-                            projectId: serviceAccount.project_id
-                        )
-
-                        let signedURL = try await uploader.uploadImage(jpegData, canvasId: canvasId, userId: authService.currentUserID ?? "anonymous")
+                        let userId = authService.currentUserID ?? "anonymous"
+                        let path = "canvases/\(canvasId)/\(userId)/\(UUID().uuidString).jpg"
+                        let ref = Storage.storage().reference().child(path)
+                        let meta = StorageMetadata()
+                        meta.contentType = "image/jpeg"
+                        _ = try await ref.putDataAsync(jpegData, metadata: meta)
+                        let downloadURL = try await ref.downloadURL()
                         let width = Double(newImage.size.width)
                         let height = Double(newImage.size.height)
-                        try await viewModel.updateBackgroundImage(signedURL, width: width, height: height)
-                        logger.info("Background image uploaded and stored: \(signedURL)")
+                        try await viewModel.updateBackgroundImage(downloadURL.absoluteString, width: width, height: height)
+                        logger.info("Background image uploaded: \(downloadURL)")
                     } catch {
                         logger.error("Error uploading image: \(error)")
                     }
@@ -486,10 +487,16 @@ struct CanvasView: View {
             viewModel.switchToCanvas(newCanvasId)
         }
         .alert("Sign in required", isPresented: $showSignInPrompt) {
-            Button("Sign in with Google") { Task { await performGoogleSignIn() } }
+            Button("Sign in with Apple") { Task { await performAppleSignIn() } }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Sign in with Google to add a background image.")
+            Text("Sign in to add a background image.")
+        }
+        .alert("Delete Account", isPresented: $showDeleteAccountConfirm) {
+            Button("Delete", role: .destructive) { Task { try? await authService.deleteAccount() } }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This will permanently delete your account and all associated data. This cannot be undone.")
         }
         .alert("Sign-In Failed", isPresented: $showSignInError) {
             Button("OK", role: .cancel) { }
@@ -653,17 +660,18 @@ struct CanvasView: View {
         }
     }
 
-    private func performGoogleSignIn() async {
+    private func performAppleSignIn() async {
         do {
-            try await authService.signInWithGoogle()
+            try await authService.signInWithApple()
             showImagePicker = true
         } catch AuthError.cancelled {
-            // Silent — user backed out of Google sheet
+            // Silent
         } catch {
             signInErrorMessage = error.localizedDescription
             showSignInError = true
         }
     }
+
 }
 
 struct ChangeCanvasIDSheet: View {

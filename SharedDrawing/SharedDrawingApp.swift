@@ -3,7 +3,6 @@ import os.log
 
 private let logger = Logger(subsystem: "io.github.nicechester.shareddrawing", category: "App")
 import Firebase
-import GoogleSignIn
 
 @main
 struct SharedDrawingApp: App {
@@ -32,9 +31,6 @@ struct SharedDrawingApp: App {
             }
             .onOpenURL { url in
                 logger.debug("Received URL: \(url.absoluteString)")
-                if GIDSignIn.sharedInstance.handle(url) {
-                    return
-                }
                 if let canvasId = url.queryItemValue(for: "id") {
                     logger.info("Parsed Canvas ID: \(canvasId)")
                     deepLinkCanvasId = canvasId

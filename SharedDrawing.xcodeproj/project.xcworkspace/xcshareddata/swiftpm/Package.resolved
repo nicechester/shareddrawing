@@ -1,5 +1,5 @@
 {
-  "originHash" : "e61e41469a54319ef0635a68f7394a5097f4b3a695eaa4c7d058b799e242c25a",
+  "originHash" : "c63c63846d9c539229e96de38d6af51417e28c0ee9a0bc48bd0f0f19d923c329",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -17,15 +17,6 @@
       "state" : {
         "revision" : "3e33dd27dd4c69bd81c7c81fe61d8ccf58846902",
         "version" : "11.3.1"
-      }
-    },
-    {
-      "identity" : "appauth-ios",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/openid/AppAuth-iOS.git",
-      "state" : {
-        "revision" : "2781038865a80e2c425a1da12cc1327bcd56501f",
-        "version" : "1.7.6"
       }
     },
     {
@@ -65,15 +56,6 @@
       }
     },
     {
-      "identity" : "googlesignin-ios",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/google/GoogleSignIn-iOS",
-      "state" : {
-        "revision" : "a7965d134c5d3567026c523e0a8a583f73b62b0d",
-        "version" : "7.1.0"
-      }
-    },
-    {
       "identity" : "googleutilities",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/google/GoogleUtilities.git",
@@ -101,30 +83,12 @@
       }
     },
     {
-      "identity" : "gtmappauth",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/google/GTMAppAuth.git",
-      "state" : {
-        "revision" : "5d7d66f647400952b1758b230e019b07c0b4b22a",
-        "version" : "4.1.1"
-      }
-    },
-    {
       "identity" : "interop-ios-for-google-sdks",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/google/interop-ios-for-google-sdks.git",
       "state" : {
         "revision" : "040d087ac2267d2ddd4cca36c757d1c6a05fdbfe",
         "version" : "101.0.0"
-      }
-    },
-    {
-      "identity" : "jwt-kit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/vapor/jwt-kit",
-      "state" : {
-        "revision" : "7abc497b0f907191933c87166e9b6a41b9d028d6",
-        "version" : "5.6.0"
       }
     },
     {
@@ -152,42 +116,6 @@
       "state" : {
         "revision" : "540318ecedd63d883069ae7f1ed811a2df00b6ac",
         "version" : "2.4.0"
-      }
-    },
-    {
-      "identity" : "swift-asn1",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-asn1.git",
-      "state" : {
-        "revision" : "a9a5efd40eaf558a2bcd48d64b1d1646be686008",
-        "version" : "1.7.1"
-      }
-    },
-    {
-      "identity" : "swift-certificates",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-certificates.git",
-      "state" : {
-        "revision" : "449dbbecd0f31e82b510ada227ca152caa8b5e98",
-        "version" : "1.19.4"
-      }
-    },
-    {
-      "identity" : "swift-crypto",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-crypto.git",
-      "state" : {
-        "revision" : "47d3869a7291f085c1fb9fb1e6d3b97a793f45c6",
-        "version" : "4.5.1"
-      }
-    },
-    {
-      "identity" : "swift-log",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-log.git",
-      "state" : {
-        "revision" : "a878e7f8f46cfc0e1125e565b5c08e7d5272dc9a",
-        "version" : "1.14.0"
       }
     }
   ],

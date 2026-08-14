@@ -1,26 +1,23 @@
 import Foundation
 import FirebaseAuth
-import FirebaseCore
-import GoogleSignIn
+import AuthenticationServices
 import UIKit
+import CryptoKit
 import Observation
 
 enum AuthError: LocalizedError {
-    case missingClientID
-    case noPresentingViewController
     case missingIDToken
     case cancelled
+    case appleSignInFailed
 
     var errorDescription: String? {
         switch self {
-        case .missingClientID:
-            return "Google Sign-In client ID not found in Firebase configuration"
-        case .noPresentingViewController:
-            return "Unable to present sign-in sheet"
         case .missingIDToken:
-            return "Failed to retrieve ID token from Google Sign-In"
+            return "Failed to retrieve ID token"
         case .cancelled:
             return "Sign-in was cancelled by the user"
+        case .appleSignInFailed:
+            return "Apple Sign-In failed"
         }
     }
 }
@@ -36,6 +33,8 @@ class AuthService {
     private var authStateListener: AuthStateDidChangeListenerHandle?
     private static let emailKey = "authServiceEmail"
     private static let nameKey = "authServiceName"
+    private var currentNonce: String?
+    private var appleSignInDelegate: AppleSignInDelegate?
 
     init() {
         setupAuthStateListener()
@@ -68,43 +67,41 @@ class AuthService {
         isAnonymous = true
     }
 
-    func signInWithGoogle() async throws {
-        guard let clientID = FirebaseApp.app()?.options.clientID else {
-            throw AuthError.missingClientID
+    func signInWithApple() async throws {
+        let nonce = randomNonceString()
+        currentNonce = nonce
+
+        let provider = ASAuthorizationAppleIDProvider()
+        let request = provider.createRequest()
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = sha256(nonce)
+
+        let result = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<ASAuthorization, Error>) in
+            let delegate = AppleSignInDelegate(continuation: continuation)
+            appleSignInDelegate = delegate
+            let controller = ASAuthorizationController(authorizationRequests: [request])
+            controller.delegate = delegate
+            controller.presentationContextProvider = delegate
+            controller.performRequests()
         }
 
-        // Configure Google Sign-In
-        let config = GIDConfiguration(clientID: clientID)
-        GIDSignIn.sharedInstance.configuration = config
-
-        guard let topVC = Self.topViewController() else {
-            throw AuthError.noPresentingViewController
+        guard let appleIDCredential = result.credential as? ASAuthorizationAppleIDCredential,
+              let tokenData = appleIDCredential.identityToken,
+              let idToken = String(data: tokenData, encoding: .utf8) else {
+            throw AuthError.appleSignInFailed
         }
 
-        let result: GIDSignInResult
-        do {
-            result = try await GIDSignIn.sharedInstance.signIn(withPresenting: topVC)
-        } catch let error as NSError where error.code == GIDSignInError.Code.canceled.rawValue {
-            throw AuthError.cancelled
-        }
+        let credential = OAuthProvider.appleCredential(withIDToken: idToken, rawNonce: nonce, fullName: appleIDCredential.fullName)
 
-        guard let idToken = result.user.idToken?.tokenString else {
-            throw AuthError.missingIDToken
-        }
-
-        let credential = GoogleAuthProvider.credential(withIDToken: idToken, accessToken: result.user.accessToken.tokenString)
-
-        // Try to link to current anonymous user
         if let anonUser = Auth.auth().currentUser, anonUser.isAnonymous {
             do {
                 _ = try await anonUser.link(with: credential)
                 currentUserID = anonUser.uid
-                currentUserName = result.user.profile?.givenName
-                currentUserEmail = result.user.profile?.email
+                currentUserName = appleIDCredential.fullName.flatMap { PersonNameComponentsFormatter().string(from: $0).nilIfEmpty }
+                currentUserEmail = appleIDCredential.email
                 persistUserData()
                 isAnonymous = false
             } catch let error as NSError where error.code == AuthErrorCode.credentialAlreadyInUse.rawValue {
-                // Credential already linked elsewhere, sign in normally
                 _ = try await Auth.auth().signIn(with: credential)
                 if let firebaseUser = Auth.auth().currentUser {
                     currentUserID = firebaseUser.uid
@@ -115,7 +112,6 @@ class AuthService {
                 }
             }
         } else {
-            // No anonymous user or already authenticated, sign in normally
             _ = try await Auth.auth().signIn(with: credential)
             if let firebaseUser = Auth.auth().currentUser {
                 currentUserID = firebaseUser.uid
@@ -127,12 +123,31 @@ class AuthService {
         }
     }
 
+    func deleteAccount() async throws {
+        guard let user = Auth.auth().currentUser else { return }
+        try await user.delete()
+        UserDefaults.standard.removeObject(forKey: Self.emailKey)
+        UserDefaults.standard.removeObject(forKey: Self.nameKey)
+        try await signInAnonymously()
+    }
+
     func signOut() async throws {
-        GIDSignIn.sharedInstance.signOut()
         try Auth.auth().signOut()
         UserDefaults.standard.removeObject(forKey: Self.emailKey)
         UserDefaults.standard.removeObject(forKey: Self.nameKey)
         try await signInAnonymously()
+    }
+
+    private func randomNonceString(length: Int = 32) -> String {
+        var randomBytes = [UInt8](repeating: 0, count: length)
+        _ = SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes)
+        return randomBytes.map { String(format: "%02x", $0) }.joined()
+    }
+
+    private func sha256(_ input: String) -> String {
+        let data = Data(input.utf8)
+        let hash = SHA256.hash(data: data)
+        return hash.compactMap { String(format: "%02x", $0) }.joined()
     }
 
     private func persistUserData() {
@@ -143,26 +158,33 @@ class AuthService {
             UserDefaults.standard.set(name, forKey: Self.nameKey)
         }
     }
+}
 
-    static func topViewController() -> UIViewController? {
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
-            return nil
-        }
+// MARK: - Apple Sign-In Delegate
 
-        var topViewController = windowScene.windows.first?.rootViewController
+private class AppleSignInDelegate: NSObject, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
+    private let continuation: CheckedContinuation<ASAuthorization, Error>
 
-        while let presentedViewController = topViewController?.presentedViewController {
-            topViewController = presentedViewController
-        }
-
-        if let navigationController = topViewController as? UINavigationController {
-            topViewController = navigationController.visibleViewController
-        }
-
-        if let tabBarController = topViewController as? UITabBarController {
-            topViewController = tabBarController.selectedViewController
-        }
-
-        return topViewController
+    init(continuation: CheckedContinuation<ASAuthorization, Error>) {
+        self.continuation = continuation
     }
+
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        continuation.resume(returning: authorization)
+    }
+
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        continuation.resume(throwing: error)
+    }
+
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first { $0.isKeyWindow } ?? ASPresentationAnchor()
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }

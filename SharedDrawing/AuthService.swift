@@ -180,8 +180,8 @@ private class AppleSignInDelegate: NSObject, ASAuthorizationControllerDelegate, 
     func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
         UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
-            .flatMap { $0.windows }
-            .first { $0.isKeyWindow } ?? ASPresentationAnchor()
+            .first { $0.activationState == .foregroundActive }?
+            .keyWindow ?? ASPresentationAnchor()
     }
 }
 
